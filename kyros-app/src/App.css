@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-manrope: "Manrope", sans-serif;
+  --color-brand-blue: #003f87;
+  --color-brand-light: #0056b3;
+  --color-surface-container: #fff;
+  --color-bg-surface: #f9f9fd;
+  --color-on-surface: #000;
+  --color-on-surface-variant: #424752;
+  --color-error: #ba1a1a;
+  --color-maintenance: #722b00;
+}
+
+@layer base {
+  * {
+    font-family: inherit;
+  }
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9fd;
+    overflow-x: hidden;
+    width: 100%;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  main {
+    border: none;
+    outline: none;
+  }
+  body{
+    font-family: var(--font-sans);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-manrope);
+    font-weight: 800;
+    color: var(--color-on-surface);
+  }
+  h1 {
+    font-size: 40px;
+  }
+  h2{
+    font-weight: 700;
+    font-size: 22px;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: #f9f9fd;
+  font-family: var(--font-sans);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-size: inherit;
+  display: inline-block;
+  vertical-align: middle;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.glass-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.ambient-glow {
+  box-shadow: 0 32px 48px rgba(25, 28, 30, 0.06);
+}
+
+.technical-gradient {
+  background: linear-gradient(135deg, #003f87 0%, #0056b3 100%);
+}
+
+#addBtn {
+  background-color: #003f87;
+}

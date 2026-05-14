@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
 
 const Telemetry = () => {
@@ -12,6 +14,19 @@ const Telemetry = () => {
     const handleDivClick = () => {
         navigate('/modules');
     };
+
+    const MySwal = withReactContent(Swal);
+
+    const btnDelClick = () => {
+        withReactContent(Swal).fire({
+            title: <i>Ingrese el PIN de administrador</i>,
+            input: 'text',
+            inputValue,
+            preConfirm: () => {
+                setInputValue(Swal.getInput()?.value || '')
+            },
+        })
+    }
 
     return (
         <div className="bg-surface min-h-screen">
@@ -43,7 +58,7 @@ const Telemetry = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                    <div 
+                    <div
                         className="md:col-span-4 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
                         <div className="relative h-48 cursor-pointer" onClick={handleDivClick}>
                             <div className="absolute inset-0 bg-maintenance/10 flex items-center justify-center">
@@ -69,7 +84,7 @@ const Telemetry = () => {
                                     id="btnEditSector"
                                     onClick={handleEditClick}>
                                     Editar sector</button>
-                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors">
+                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors" onClick={btnDelClick}>
                                     <span className="material-symbols-outlined text-sm">delete</span>
                                 </button>
                             </div>

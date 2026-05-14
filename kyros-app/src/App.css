@@ -6,7 +6,7 @@
   --color-brand-blue: #003f87;
   --color-brand-light: #0056b3;
   --color-surface-container: #fff;
-  --color-bg-surface: #f9f9fd;
+  --color-surface: #f9f9fd;
   --color-on-surface: #000;
   --color-on-surface-variant: #424752;
   --color-error: #ba1a1a;
@@ -59,6 +59,11 @@ body {
   overflow-x: hidden;
   background-color: #f9f9fd;
   font-family: var(--font-sans);
+}
+
+.precision-bg {
+  background-image: radial-gradient(circle at 2px 2px, rgba(0, 63, 135, 0.05) 1px, transparent 0);
+  background-size: 32px 32px;
 }
 
 .material-symbols-outlined {

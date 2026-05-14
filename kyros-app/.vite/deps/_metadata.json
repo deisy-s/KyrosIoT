@@ -1,0 +1,58 @@
+{
+  "hash": "ba76e16b",
+  "configHash": "37ada78b",
+  "lockfileHash": "659e0cfe",
+  "browserHash": "7694744b",
+  "optimized": {
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "d73ec066",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "3339376d",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "a4718ccc",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "aa9fa14b",
+      "needsInterop": true
+    },
+    "sweetalert2-react-content": {
+      "src": "../../node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js",
+      "file": "sweetalert2-react-content.js",
+      "fileHash": "f107df4e",
+      "needsInterop": true
+    },
+    "sweetalert2": {
+      "src": "../../node_modules/sweetalert2/dist/sweetalert2.all.js",
+      "file": "sweetalert2.js",
+      "fileHash": "fd3644de",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-CO3PsZeE": {
+      "file": "chunk-CO3PsZeE.js",
+      "isDynamicEntry": false
+    },
+    "client-icyHITeG": {
+      "file": "client-icyHITeG.js",
+      "isDynamicEntry": false
+    },
+    "react-dom-C3_-XuI7": {
+      "file": "react-dom-C3_-XuI7.js",
+      "isDynamicEntry": false
+    }
+  }
+}

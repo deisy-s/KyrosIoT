@@ -4,6 +4,10 @@ import '../App.css'
 const EditSector = () => {
     const navigate = useNavigate();
 
+    const handleTelemetryClick = () => {
+        navigate('/telemetry');
+    };
+
     const handleCancelClick = () => {
         navigate('/telemetry');
     };
@@ -15,6 +19,7 @@ const EditSector = () => {
                     <div className="col-span-12 mb-4 flex justify-between items-end">
                         <div>
                             <nav className="flex items-center gap-2 text-xs font-bold text-brand-blue mb-2 tracking-widest uppercase">
+                                <span onClick={handleTelemetryClick} className="text-brand-blue cursor-pointer mr-3 material-symbols-outlined text-[20px]! active:scale-95">arrow_back</span>
                                 <span>Montaje de cables</span>
                                 <span className="material-symbols-outlined text-[10px]">chevron_right</span>
                                 <span className="text-on-surface">Editar</span>

@@ -1,12 +1,24 @@
+import { useNavigate } from 'react-router-dom';
 import '../App.css'
 
 const Modules = () => {
+    const navigate = useNavigate();
+
+    const handleModuleClick = () => {
+        navigate('/module-info');
+    };
+
+    const handleTelemetryClick = () => {
+        navigate('/telemetry');
+    };
+    
     return (
         <div className="bg-surface min-h-screen">
             <main className="pt-25 px-6 md:px-12 pb-12 w-full">
                 <div className="col-span-12 mb-10 flex justify-between items-end">
                     <div>
                         <nav className="flex items-center gap-2 text-xs font-bold text-brand-blue mb-2 tracking-widest uppercase">
+                            <span onClick={handleTelemetryClick} className="text-brand-blue cursor-pointer mr-3 material-symbols-outlined text-[20px]! active:scale-95">arrow_back</span>
                             <span>Montaje de cables</span>
                             <span className="material-symbols-outlined text-[10px]">chevron_right</span>
                             <span className="text-outline text-on-surface">Módulos</span>
@@ -36,7 +48,8 @@ const Modules = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                     <div
-                        className="md:col-span-4 cursor-pointer bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
+                        className="md:col-span-4 cursor-pointer bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col"
+                        onClick={handleModuleClick}>
                         <div className="relative h-48">
                             <div className="absolute inset-0 bg-maintenance/10 flex items-center justify-center">
                                 <span className="material-symbols-outlined text-maintenance/20 text-6xl!">thermostat</span>

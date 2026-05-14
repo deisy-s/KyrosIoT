@@ -132,7 +132,7 @@ const Dashboard = ({ onOpenPanel }) => {
                     </div>
                     <button onClick={() => setIsPanelOpen(true)}
                         className="md:w-auto px-8 bg-linear-to-br cursor-pointer from-brand-blue to-brand-light text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all">
-                        <span className="material-symbols-outlined">add_circle</span>
+                        <span className="material-symbols-outlined text-xl!">add_circle</span>
                         <span>Agregar widget</span>
                     </button>
                 </header>

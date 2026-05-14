@@ -7,6 +7,7 @@ import Dashboard from './Dashboard.jsx';
 import Telemetry from './Telemetry.jsx';
 import EditSector from './EditSector.jsx';
 import Modules from './Modules.jsx';
+import Shop from './Shop.jsx';
 import Help from './Help.jsx';
 import ModuleInfo from './ModuleInfo.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
@@ -27,7 +28,7 @@ const App = () => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     const handleLogout = async () => {
-        await fetch('/api/logout', { method: 'POST' });
+        await fetch('/api/auth/logout', { method: 'POST' });
         localStorage.removeItem('user');
         window.location.href = '/signin';
     };
@@ -66,6 +67,13 @@ const App = () => {
                                         : "text-slate-500 dark:text-slate-400 hover:text-brand-blue"
                                     }`
                                 }>Automatización</NavLink>
+                            <NavLink to="/shop"
+                                className={({ isActive }) =>
+                                    `text-base py-4 transition-colors ${isActive
+                                        ? "text-brand-blue dark:text-blue-400 font-bold border-b-2 border-brand-blue"
+                                        : "text-slate-500 dark:text-slate-400 hover:text-brand-blue"
+                                    }`
+                                }>Tienda</NavLink>
                         </nav>
                     </div>
 
@@ -138,11 +146,8 @@ const App = () => {
                             <ModuleInfo />
                         </ProtectedRoute>
                     } />
-                    <Route path="/help" element={
-                        <ProtectedRoute>
-                            <Help />
-                        </ProtectedRoute>
-                    } />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/shop" element={<Shop />} />
                     <Route path="/signin" element={<SignIn />} />
                     <Route path="/signup" element={<SignUp />} />
 

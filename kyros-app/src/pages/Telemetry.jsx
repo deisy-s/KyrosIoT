@@ -6,26 +6,57 @@ import '../App.css'
 
 const Telemetry = () => {
     const navigate = useNavigate();
-
-    const handleEditClick = () => {
-        navigate('/edit-sector');
-    };
+    const MySwal = withReactContent(Swal);
 
     const handleDivClick = () => {
         navigate('/modules');
     };
 
-    const MySwal = withReactContent(Swal);
+    const handleAdminAction = async (onSuccess) => {
+        const { value: pin } = await withReactContent(Swal).fire({
+            title: <i>Ingrese el PIN de administrador</i>,
+            input: 'password',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            confirmButtonText: 'Verificar',
+            confirmButtonColor: '#003f87',
+            showLoaderOnConfirm: true,
+            preConfirm: async (inputPin) => {
+                try {
+                    const response = await fetch('/api/auth/admin-verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ pin: inputPin })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'PIN Incorrecto');
+                    }
+                    return data;
+                } catch (error) {
+                    Swal.showValidationMessage(`Error: ${error.message}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        });
+
+        if (pin) {
+            onSuccess();
+        }
+    }
+
+    const handleEditClick = () => {
+        handleAdminAction(() => navigate('/edit-sector'));
+    };
 
     const btnDelClick = () => {
-        withReactContent(Swal).fire({
-            title: <i>Ingrese el PIN de administrador</i>,
-            input: 'text',
-            inputValue,
-            preConfirm: () => {
-                setInputValue(Swal.getInput()?.value || '')
-            },
-        })
+        handleAdminAction(() => {
+            
+        });
     }
 
     return (
@@ -84,7 +115,8 @@ const Telemetry = () => {
                                     id="btnEditSector"
                                     onClick={handleEditClick}>
                                     Editar sector</button>
-                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors" onClick={btnDelClick}>
+                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors"
+                                    onClick={btnDelClick}>
                                     <span className="material-symbols-outlined text-sm">delete</span>
                                 </button>
                             </div>

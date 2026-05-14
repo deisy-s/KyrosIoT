@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const moduleDataSchema = new mongoose.Schema({
     ModuleID: String,
-    Timestamp: { type: Date, default: Date.now },
+    SectorID: String,
+    CompanyID: String,
+    Timestamp: Date,
     Type: String,
     Value: String,
 })

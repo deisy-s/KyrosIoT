@@ -44,6 +44,7 @@ const SignIn = () => {
             } else {
                 withReactContent(Swal).fire({
                     title: <i>Error al iniciar sesión</i>,
+                    text:'Usuario o contraseña incorrectos. Por favor, intente de nuevo.',
                     icon: 'error',
                     confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#ba1a1a',

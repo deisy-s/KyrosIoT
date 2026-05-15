@@ -1,8 +1,19 @@
 import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import '../App.css'
 
 const EditSector = () => {
     const navigate = useNavigate();
+
+    const [selectedIcon, setSelectedIcon] = useState(0);
+
+    const icons = [
+        "settings_input_component",
+        "bolt",
+        "precision_manufacturing",
+        "conveyor_belt",
+        "forklift"
+    ];
 
     const handleTelemetryClick = () => {
         navigate('/telemetry');
@@ -56,10 +67,32 @@ const EditSector = () => {
                                         placeholder="Ingrese nombre..." type="text" />
                                 </div>
                             </div>
+
+                            <div className="space-y-3 mt-2">
+                                <label className="text-xs font-bold text-on-surface-variant">ÍCONO DEL SECTOR</label>
+                                <div className="grid grid-cols-5 gap-3">
+                                    {icons.map((icon, index) => {
+                                        const isSelected = selectedIcon === index;
+
+                                        return (
+                                            <button
+                                                key={index}
+                                                onClick={() => setSelectedIcon(index)}
+                                                className={`aspect-square flex items-center justify-center rounded-lg transition-all duration-200 cursor-pointer ${isSelected
+                                                    ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/30"
+                                                    : "bg-on-surface-variant/10 text-outline hover:bg-on-surface-variant/18"
+                                                    }
+                                                `}>
+                                                <span className="material-symbols-outlined">{icon}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
+                    <div className="col-span-6 lg:col-span-7 flex flex-col gap-6">
                         <div
                             className="bg-surface-container rounded-xl shadow-[0_32px_48px_rgba(25,28,30,0.06)] flex flex-col min-h-125">
                             <div className="p-8 border-b border-surface-container flex justify-between items-center">
@@ -137,8 +170,8 @@ const EditSector = () => {
                         </div>
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     )
 }
 

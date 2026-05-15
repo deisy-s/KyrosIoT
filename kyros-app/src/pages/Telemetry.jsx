@@ -1,8 +1,94 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
+
+const SectorCards = ({ handleEditClick, btnDelClick, handleDivClick }) => {
+    const navigate = useNavigate();
+    const [sectors, setSectors] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSectors = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.post('/api/sectors/sectors-info', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                setSectors(response.data.sectors);
+            } catch (error) {
+                console.error("Error fetching sectors:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSectors();
+    }, []);
+
+    if (loading) return <div className="text-white">Cargando sectores...</div>;
+
+    if (sectors.length === 0) {
+        return <div className="text-on-surface-variant p-10">No se encontraron sectores.</div>;
+    }
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            {sectors.map((sector) => {
+                const isAlert = sector.status === 'alert' || sector.status === 'maintenance';
+
+                const themeColor = isAlert ? 'error' : 'brand-blue';
+                const bgColor = isAlert ? 'bg-maintenance/10' : 'bg-brand-blue/10';
+                const badgeColor = isAlert ? 'bg-maintenance' : 'bg-brand-blue';
+
+                return (
+                    <div key={sector.SectorID} className="md:col-span-4 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
+                        <div onClick={handleDivClick}
+                            className="relative h-48 cursor-pointer">
+                            <div className={`absolute inset-0 ${bgColor} flex items-center justify-center`}>
+                                <span className={`material-symbols-outlined text-8xl! ${isAlert ? 'text-maintenance/20' : 'text-brand-blue/30'}`}>
+                                    {sector.Icon || 'settings_input_component'}
+                                </span>
+                            </div>
+
+                            <div className="absolute top-4 right-4">
+                                <span className={`${badgeColor} px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-widest`}>
+                                    {isAlert ? 'Mantenimiento requerido' : 'Activo'}
+                                </span>
+                            </div>
+
+                            <div className="absolute bottom-4 left-4">
+                                <h2 className="text-on-surface text-xl font-inter">{sector.Name}</h2>
+                            </div>
+                        </div>
+
+                        <div className="p-6 flex-1 flex flex-col">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-on-surface-variant text-sm">Dispositivos activos</span>
+                                <span className="text-on-surface font-bold">{sector.Devices || 0}</span>
+                            </div>
+
+                            <div className="mt-auto flex gap-3">
+                                <button onClick={handleEditClick}
+                                    className="flex-1 py-2 text-brand-blue font-bold text-sm bg-brand-blue/10 rounded-md cursor-pointer hover:bg-brand-blue hover:text-white active:scale-95 transition-all">
+                                    Editar sector
+                                </button>
+                                <button onClick={btnDelClick}
+                                    className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors">
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
 const Telemetry = () => {
     const navigate = useNavigate();
@@ -55,9 +141,9 @@ const Telemetry = () => {
 
     const btnDelClick = () => {
         handleAdminAction(() => {
-            
+
         });
-    }
+    };
 
     return (
         <div className="bg-surface min-h-screen">
@@ -88,102 +174,11 @@ const Telemetry = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                    <div
-                        className="md:col-span-4 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
-                        <div className="relative h-48 cursor-pointer" onClick={handleDivClick}>
-                            <div className="absolute inset-0 bg-maintenance/10 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-maintenance/20 text-6xl!">cable</span>
-                            </div>
-                            <div className="absolute top-4 right-4">
-                                <span
-                                    className="bg-maintenance px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-widest">Mantenimiento
-                                    requerido</span>
-                            </div>
-                            <div className="absolute bottom-4 left-4">
-                                <h2 className="text-on-surface text-xl font-inter">Montaje de cables</h2>
-                            </div>
-                        </div>
-                        <div className="p-6 flex-1">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-on-surface-variant text-sm">Dispositivos activos</span>
-                                <span className="text-on-surface font-bold">8</span>
-                            </div>
-                            <div className="mt-auto flex gap-3">
-                                <button
-                                    className="flex-1 py-2 text-brand-blue font-bold text-sm bg-brand-blue/10 rounded-md cursor-pointer hover:bg-brand-blue hover:text-white active:scale-95 transition-all"
-                                    id="btnEditSector"
-                                    onClick={handleEditClick}>
-                                    Editar sector</button>
-                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors"
-                                    onClick={btnDelClick}>
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        className="md:col-span-4 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
-                        <div className="relative h-48 cursor-pointer">
-                            <div className="absolute inset-0 bg-brand-blue/10 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-brand-blue/30 text-6xl!">inventory_2</span>
-                            </div>
-                            <div className="absolute top-4 right-4">
-                                <span
-                                    className="bg-brand-blue px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-widest">Activo</span>
-                            </div>
-                            <div className="absolute bottom-4 left-4">
-                                <h2 className="text-on-surface text-xl font-inter">Almacén de componentes</h2>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-on-surface-variant text-sm">Dispositivos activos</span>
-                                <span className="text-on-surface font-bold">3</span>
-                            </div>
-                            <div className="flex gap-3">
-                                <button
-                                    className="flex-1 py-2 text-brand-blue font-bold text-sm cursor-pointer bg-brand-blue/10 rounded-md hover:bg-brand-blue hover:text-white active:scale-95 transition-all">Editar
-                                    sector</button>
-                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors">
-                                    <span className="material-symbols-outlined text-sm cursor-pointer">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        className="md:col-span-4 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
-                        <div className="relative h-48 cursor-pointer">
-                            <div className="absolute inset-0 bg-brand-blue/10 flex items-center justify-center">
-                                <span
-                                    className="material-symbols-outlined text-brand-blue/30 text-6xl!">precision_manufacturing</span>
-                            </div>
-                            <div className="absolute top-4 right-4">
-                                <span
-                                    className="bg-brand-blue px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-widest">Activo</span>
-                            </div>
-                            <div className="absolute bottom-4 left-4">
-                                <h2 className="text-on-surface text-xl font-inter">Línea de producción 1</h2>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-on-surface-variant text-sm">Dispositivos activos</span>
-                                <span className="text-on-surface font-bold">3</span>
-                            </div>
-                            <div className="flex gap-3">
-                                <button
-                                    className="flex-1 py-2 text-brand-blue font-bold text-sm cursor-pointer bg-brand-blue/10 rounded-md hover:bg-brand-blue hover:text-white active:scale-95 transition-all">Editar
-                                    sector</button>
-                                <button className="px-3 py-2 text-outline cursor-pointer hover:text-error transition-colors">
-                                    <span className="material-symbols-outlined text-sm cursor-pointer">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <SectorCards
+                    handleEditClick={handleEditClick}
+                    btnDelClick={btnDelClick}
+                    handleDivClick={handleDivClick}
+                />
             </main>
         </div>
     )

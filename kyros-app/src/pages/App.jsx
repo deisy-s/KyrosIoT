@@ -11,7 +11,9 @@ import Shop from './Shop.jsx';
 import Help from './Help.jsx';
 import ModuleInfo from './ModuleInfo.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
+import Automation from './Automation.jsx';
 import '../App.css'
+
 
 const App = () => {
     const location = useLocation();
@@ -150,6 +152,7 @@ const App = () => {
                     <Route path="/shop" element={<Shop />} />
                     <Route path="/signin" element={<SignIn />} />
                     <Route path="/signup" element={<SignUp />} />
+                    <Route path="/automation" element={<Automation />} />
 
                 </Routes>
             </div>

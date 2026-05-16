@@ -12,6 +12,7 @@ import Help from './Help.jsx';
 import ModuleInfo from './ModuleInfo.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import Automation from './Automation.jsx';
+import LinkDevice from './LinkDevice.jsx';
 import '../App.css'
 
 
@@ -133,12 +134,13 @@ const App = () => {
                             <Telemetry />
                         </ProtectedRoute>
                     } />
-                    <Route path="/edit-sector" element={
+                   <Route path="/edit-sector/:id" element={
                         <ProtectedRoute>
                             <EditSector />
                         </ProtectedRoute>
                     } />
-                    <Route path="/modules" element={
+
+                    <Route path="/modules/:id" element={
                         <ProtectedRoute>
                             <Modules />
                         </ProtectedRoute>
@@ -146,6 +148,11 @@ const App = () => {
                     <Route path="/module-info" element={
                         <ProtectedRoute>
                             <ModuleInfo />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/link-device" element={
+                        <ProtectedRoute>
+                            <LinkDevice />
                         </ProtectedRoute>
                     } />
                     <Route path="/help" element={<Help />} />

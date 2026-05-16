@@ -183,14 +183,30 @@ const Telemetry = () => {
 
     const btnDelClick = (sectorId, sectorName) => {
         handleAdminAction(async () => {
-            // Aquí irá la llamada axios para borrar el sector cuando Deisy haga la ruta
-            MySwal.fire({
-                title: 'Sector Eliminado',
-                text: `El KYROSYS Core de ${sectorName || 'este sector'} ha sido desvinculado.`,
-                icon: 'success'
-            }).then(() => {
-                window.location.reload(); // Recarga temporal para actualizar la vista
-            });
+            try {
+                const token = localStorage.getItem('token');
+                // LLAMADA REAL A LA BASE DE DATOS PARA ELIMINAR EL SECTOR
+                const response = await fetch(`http://localhost:5000/api/sectors/delete/${sectorId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al eliminar el sector en el servidor');
+                }
+
+                MySwal.fire({
+                    title: 'Sector Eliminado',
+                    text: `El KYROSYS Core de ${sectorName || 'este sector'} ha sido desvinculado de tu empresa.`,
+                    icon: 'success'
+                }).then(() => {
+                    window.location.reload(); // Recargamos para que desaparezca de la pantalla
+                });
+            } catch (error) {
+                MySwal.fire('Error', error.message, 'error');
+            }
         });
     };
 

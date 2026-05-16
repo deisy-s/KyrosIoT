@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const sectorRoutes = require('./routes/sectorRoutes.js');
 const iotRoutes = require('./routes/iotRoutes.js');
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

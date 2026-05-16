@@ -46,7 +46,6 @@ const EditSector = () => {
 
         setLoading(true);
         try {
-            /* // CÓDIGO LISTO PARA CUANDO EL BACKEND ESTÉ TERMINADO:
             const token = localStorage.getItem('token');
             const response = await fetch(`http://localhost:5000/api/sectors/edit/${id}`, {
                 method: 'PUT',
@@ -60,7 +59,7 @@ const EditSector = () => {
                 })
             });
             if (!response.ok) throw new Error('Error al guardar');
-            */
+        
 
             // Simulación de guardado exitoso
             setTimeout(() => {

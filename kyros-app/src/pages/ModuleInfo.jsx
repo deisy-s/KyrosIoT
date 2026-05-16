@@ -109,4 +109,4 @@ const ModuleInfo = () => {
     );
 };
 
-export default ModuleInfo;
+export default ModuleInfo;  

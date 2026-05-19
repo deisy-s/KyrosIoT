@@ -11,12 +11,14 @@ Interfaz gráfica de usuario (GUI) para la gestión, monitorización y control d
 
 ## 🟡 Pendientes y Roadmap (Visión Comercial y Escalabilidad)
 
-* **Widgets Dinámicos:** Refactorizar el panel principal para permitir al usuario agregar, mover o eliminar tarjetas de métricas según sus preferencias, reemplazando la cuadrícula estática actual.
-* **Gestión de Sectores y Monitoreo de Conexión:** * Asignar visual y lógicamente cada KYROS Core v1 como un "Sector" independiente.
+* **Gestión de Sectores y Monitoreo de Conexión:** 
   * Implementar alertas visuales inmediatas en caso de pérdida de comunicación (desconexión) con un Core específico.
+* **Monitoreo de sensores:** 
+  * Mostrar datos en tiempo real de módulos sensores
+  * Mostrar alertas visuales al detectar valores fuera del valor umbral
+  * Verificar conexión entre módulo sensor y módulo hub
 * **Onboarding Plug & Play de Nodos:** Crear un flujo de notificaciones donde el KYROS Core avise autónomamente a la interfaz web cuando detecte un nuevo módulo sensor en la zona. La UI debe permitir registrarlo, nombrarlo y comenzar su monitoreo continuo (incluyendo alertas de caída del sensor).
-* **Creador de Automatizaciones Personalizadas:** Desarrollar un panel donde el usuario pueda registrar nuevas reglas lógicas (Ej. "Si Humedad > 60%, encender Relé 2"), en lugar de depender de reglas hardcodeadas.
-* **Módulo Premium (Big Data & IA):** * Integrar automatizaciones inteligentes que analicen los últimos meses de operaciones para tomar decisiones predictivas (Ej. Mantenimiento preventivo).
-  * Exclusivo para la capa Premium.
-* **Gestor de Suscripciones (Paywall):** Implementar una sección de facturación clara que defina las limitantes del plan Gratuito y desbloquee las analíticas avanzadas del plan Premium.
-* **Despliegue a Producción:** Subir la aplicación final compilada a Vercel o Netlify vinculando las variables de entorno a la API pública.
+* **Creador de Automatizaciones Personalizadas:** 
+  * Desarrollar una interfaz donde el usuario puede seleccionar un sector y sensor para el cual se agrega una regla lógica
+  * Vincular automatizaciones con esp32 
+* **Despliegue a Producción:** Subir la aplicación final compilada a Render o Vercel

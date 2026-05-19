@@ -1,11 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import '../App.css';
 
 export default function Dashboard() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState([]);
 
-    // --- BANCO DE WIDGETS DISPONIBLES (Estilo App Store) ---
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get('/api/auth/get-user', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                setUser(response.data.user);
+            } catch (error) {
+                console.error("Error fetching user:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
+    }, []);
+
+    // BANCO DE WIDGETS DISPONIBLES 
     const bibliotecaWidgets = [
         { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
@@ -14,14 +37,14 @@ export default function Dashboard() {
         { id: 'w_gas', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Concentración de Gas', value: '45 ppm', subtitle: 'Sector Almacén • Seguro', icon: 'detector_smoke', color: 'text-yellow-500 bg-yellow-500/10' }
     ];
 
-    // --- WIDGETS INSTALADOS EN LA PANTALLA INICIAL ---
+    // WIDGETS INSTALADOS EN LA PANTALLA INICIAL
     const [widgetsActivos, setWidgetsActivos] = useState([
         { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
         { id: 'w_graph', size: 'col-span-12 lg:col-span-8', type: 'chart', title: 'Rendimiento de Producción', value: '+12% Eficiencia', subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up', color: 'text-brand-blue bg-brand-blue/10' }
     ]);
 
-    // --- LOGICA DE MOVIMIENTO (NUEVO) ---
+    // LOGICA DE MOVIMIENTO
     const moverWidget = (index, direccion) => {
         const nuevosWidgets = [...widgetsActivos];
         const nuevaPosicion = index + direccion;
@@ -51,7 +74,7 @@ export default function Dashboard() {
                 {/* Encabezado */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
-                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight font-bold">Nombre de la empresa</h1>
+                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight font-bold">{user.companyName}</h1>
                         <p className="text-on-surface-variant text-base mt-2">
                             Personalice su dashboard para visualizar los indicadores clave de rendimiento más relevantes para su planta.
                         </p>

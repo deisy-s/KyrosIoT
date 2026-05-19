@@ -19,8 +19,8 @@ export default function LinkDevice() {
         try {
             const token = localStorage.getItem('token');
 
-            /* // LLAMADA REAL CUANDO DEISY CREE LA RUTA EN EL BACKEND
-            const res = await fetch('http://localhost:5000/api/sectors/link', {
+            // Crear un sector nuevo
+            const res = await fetch('/api/sectors/link', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -31,8 +31,7 @@ export default function LinkDevice() {
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'PIN incorrecto o Core no encontrado');
-            */
-
+            
             // Simulación de conexión exitosa
             setTimeout(() => {
                 setLoading(false);

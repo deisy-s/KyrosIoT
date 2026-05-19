@@ -104,7 +104,7 @@ router.post('/link', verifyToken, async (req, res) => {
             SectorID: codigoVinculacion,
             Icon: "precision_manufacturing",
             Devices: 0,
-            Status: "Activo"
+            Status: "active"
         });
 
         await nuevoSector.save();

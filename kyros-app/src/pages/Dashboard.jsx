@@ -1,60 +1,64 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { insforge } from '../lib/insforge';
 import '../App.css';
 
 export default function Dashboard() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [user, setUser] = useState([]);
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get('/api/auth/get-user', {}, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                setUser(response.data.user);
-            } catch (error) {
-                console.error("Error fetching user:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUser();
-    }, []);
+    const [user, setUser] = useState(null);
+    const [telemetryData, setTelemetryData] = useState({});
 
     // BANCO DE WIDGETS DISPONIBLES 
     const bibliotecaWidgets = [
-        { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
-        { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
-        { id: 'w_graph', size: 'col-span-12 lg:col-span-8', type: 'chart', title: 'Rendimiento de Producción', value: '+12% Eficiencia', subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up', color: 'text-brand-blue bg-brand-blue/10' },
-        { id: 'w_core', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'status', title: 'Estado KYROSYS Core v1', value: 'En línea', subtitle: 'IP: 192.168.5.105', icon: 'router', color: 'text-brand-blue bg-brand-blue/10' },
-        { id: 'w_gas', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Concentración de Gas', value: '45 ppm', subtitle: 'Sector Almacén • Seguro', icon: 'detector_smoke', color: 'text-yellow-500 bg-yellow-500/10' }
+        { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', metricKey: 'temperatura', unit: '°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
+        { id: 'w_psi',  size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge',  title: 'Presión Tanque 4',    metricKey: 'presion',      unit: ' PSI', subtitle: 'Planta Compresores • Estable',   icon: 'speed',             color: 'text-green-500 bg-green-500/10' },
+        { id: 'w_graph',size: 'col-span-12 lg:col-span-8',                type: 'chart',  title: 'Rendimiento de Producción', metricKey: null,  unit: '',     subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up',       color: 'text-brand-blue bg-brand-blue/10' },
+        { id: 'w_core', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'status', title: 'Estado KYROSYS Core v1', metricKey: null,    unit: '',     subtitle: 'IP: 192.168.5.105',              icon: 'router',            color: 'text-brand-blue bg-brand-blue/10' },
+        { id: 'w_gas',  size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Concentración de Gas',   metricKey: 'humo',  unit: ' ppm', subtitle: 'Sector Almacén • Seguro',        icon: 'detector_smoke',    color: 'text-yellow-500 bg-yellow-500/10' }
     ];
 
     // WIDGETS INSTALADOS EN LA PANTALLA INICIAL
     const [widgetsActivos, setWidgetsActivos] = useState([
-        { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
-        { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
-        { id: 'w_graph', size: 'col-span-12 lg:col-span-8', type: 'chart', title: 'Rendimiento de Producción', value: '+12% Eficiencia', subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up', color: 'text-brand-blue bg-brand-blue/10' }
+        { id: 'w_temp',  size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', metricKey: 'temperatura', unit: '°C',   subtitle: 'Línea de Cableado • Nominal',    icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
+        { id: 'w_psi',   size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge',  title: 'Presión Tanque 4',    metricKey: 'presion',      unit: ' PSI', subtitle: 'Planta Compresores • Estable',   icon: 'speed',             color: 'text-green-500 bg-green-500/10' },
+        { id: 'w_graph', size: 'col-span-12 lg:col-span-8',                type: 'chart',  title: 'Rendimiento de Producción', metricKey: null,  unit: '',     subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up',       color: 'text-brand-blue bg-brand-blue/10' }
     ]);
+
+    // Cargar usuario y última telemetría desde InsForge
+    useEffect(() => {
+        const localUser = JSON.parse(localStorage.getItem('user'));
+        setUser(localUser);
+
+        const fetchLatestTelemetry = async () => {
+            try {
+                const { data, error } = await insforge
+                    .from('telemetry')
+                    .select('type, value')
+                    .limit(20);
+
+                if (error) throw error;
+
+                const latest = {};
+                (data || []).forEach(row => {
+                    if (!latest[row.type]) latest[row.type] = row.value;
+                });
+                setTelemetryData(latest);
+            } catch (err) {
+                console.error('Error cargando telemetría:', err);
+            }
+        };
+
+        fetchLatestTelemetry();
+        const interval = setInterval(fetchLatestTelemetry, 10000);
+        return () => clearInterval(interval);
+    }, []);
 
     // LOGICA DE MOVIMIENTO
     const moverWidget = (index, direccion) => {
         const nuevosWidgets = [...widgetsActivos];
         const nuevaPosicion = index + direccion;
-
-        // Verificar límites
         if (nuevaPosicion < 0 || nuevaPosicion >= nuevosWidgets.length) return;
-
-        // Intercambio de posiciones (destructuring assignment)
         [nuevosWidgets[index], nuevosWidgets[nuevaPosicion]] = [nuevosWidgets[nuevaPosicion], nuevosWidgets[index]];
-
         setWidgetsActivos(nuevosWidgets);
     };
 
@@ -68,26 +72,33 @@ export default function Dashboard() {
         setWidgetsActivos(widgetsActivos.filter(w => w.id !== id));
     };
 
+    const getDisplayValue = (widget) => {
+        if (widget.metricKey && telemetryData[widget.metricKey] !== undefined) {
+            return `${telemetryData[widget.metricKey]}${widget.unit}`;
+        }
+        // Valores de fallback si aún no hay datos
+        const fallbacks = { 'w_temp': '23.4°C', 'w_psi': '752 PSI', 'w_gas': '45 ppm', 'w_core': 'En línea' };
+        return fallbacks[widget.id] || '--';
+    };
+
     return (
         <div className="bg-surface min-h-screen pb-12">
             <main className="pt-25 px-6 md:px-12 w-full">
                 {/* Encabezado */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
-                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight font-bold">{user.companyName}</h1>
+                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight font-bold">
+                            {user?.companyName || 'Kyrosys'}
+                        </h1>
                         <p className="text-on-surface-variant text-base mt-2">
                             Personalice su dashboard para visualizar los indicadores clave de rendimiento más relevantes para su planta.
                         </p>
                     </div>
 
                     <div className="flex gap-3">
-                        {/* Tal vez cambiar color de boton Finalizar */}
                         <button
                             onClick={() => setIsEditMode(!isEditMode)}
-                            className={`px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${isEditMode
-                                ? 'technical-gradient text-white'
-                                : 'technical-gradient text-white'
-                                }`}
+                            className="px-5 py-2.5 technical-gradient text-white rounded-lg font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
                         >
                             <span className="material-symbols-outlined text-base!">{isEditMode ? 'check_circle' : 'edit_square'}</span>
                             {isEditMode ? 'Finalizar' : 'Personalizar'}
@@ -105,37 +116,34 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                {/* Reorganización de widgets */}
+                {/* Cuadrícula de Widgets */}
                 <div className="grid grid-cols-12 gap-6 items-stretch">
                     {widgetsActivos.map((widget, index) => (
                         <div
                             key={widget.id}
-                            className={`${widget.size} relative bg-surface-container rounded-2xl p-6 border border-brand-blue/10 shadow-sm transition-all flex flex-col justify-between group ${isEditMode ? 'jiggle-mode shadow-md bg-surface-container' : ''}`}
+                            className={`${widget.size} relative bg-surface-container rounded-2xl p-6 border border-brand-blue/10 shadow-sm transition-all flex flex-col justify-between group ${isEditMode ? 'jiggle-mode shadow-md' : ''}`}
                         >
-                            {/* Mover y eliminar widgets colocados */}
+                            {/* Controles de edición: mover y eliminar */}
                             {isEditMode && (
                                 <div className="absolute -top-3 right-2 flex gap-1.5 z-50">
-                                    {/* Mover a la izquierda */}
                                     <button
                                         onClick={() => moverWidget(index, -1)}
                                         disabled={index === 0}
-                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === 0 ? 'bg-on-surface-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-surface border border-brand-blue text-brand-blue cursor-pointer hover:bg-light-bg-variant hover:border-brand-blue/60 active:scale-95'}`}
+                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === 0 ? 'bg-on-surface-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-surface border border-brand-blue text-brand-blue cursor-pointer hover:bg-light-bg-variant active:scale-95'}`}
                                         title="Mover a la izquierda"
                                     >
                                         <span className="material-symbols-outlined text-[16px] font-bold">arrow_back</span>
                                     </button>
 
-                                    {/* Mover a la derecha */}
                                     <button
                                         onClick={() => moverWidget(index, 1)}
                                         disabled={index === widgetsActivos.length - 1}
-                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === widgetsActivos.length - 1 ? 'bg-on-surface-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-surface border border-brand-blue text-brand-blue cursor-pointer hover:bg-light-bg-variant hover:border-brand-blue/60 active:scale-95'}`}
+                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === widgetsActivos.length - 1 ? 'bg-on-surface-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-surface border border-brand-blue text-brand-blue cursor-pointer hover:bg-light-bg-variant active:scale-95'}`}
                                         title="Mover a la derecha"
                                     >
                                         <span className="material-symbols-outlined text-[16px] font-bold">arrow_forward</span>
                                     </button>
 
-                                    {/* Eliminar widget */}
                                     <button
                                         onClick={() => eliminarWidget(widget.id)}
                                         className="w-7 h-7 bg-error text-white rounded-full flex items-center justify-center shadow-md cursor-pointer hover:scale-110 active:scale-95 transition-transform ml-1"
@@ -160,17 +168,17 @@ export default function Dashboard() {
 
                             <div className="mt-4 grow flex items-center">
                                 {widget.type === 'metric' && (
-                                    <span className="text-4xl! font-black text-on-surface tracking-tighter">{widget.value}</span>
+                                    <span className="text-4xl! font-black text-on-surface tracking-tighter">{getDisplayValue(widget)}</span>
                                 )}
                                 {widget.type === 'status' && (
                                     <span className="px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
                                         <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse"></span>
-                                        {widget.value}
+                                        {getDisplayValue(widget)}
                                     </span>
                                 )}
                                 {widget.type === 'gauge' && (
                                     <div className="flex items-center gap-4 w-full">
-                                        <span className="text-4xl font-black text-on-surface tracking-tighter">{widget.value}</span>
+                                        <span className="text-4xl font-black text-on-surface tracking-tighter">{getDisplayValue(widget)}</span>
                                         <div className="grow bg-surface h-2 rounded-full overflow-hidden border border-on-surface-variant">
                                             <div className="bg-brand-blue h-full w-[75%] rounded-full"></div>
                                         </div>
@@ -194,12 +202,12 @@ export default function Dashboard() {
                         </div>
                     ))}
 
-                    {/* Slot vacío para agregar widget */}
+                    {/* Slot vacío para agregar widget en modo edición */}
                     {isEditMode && (
                         <section className="col-span-12 lg:col-span-4 h-full">
                             <button onClick={() => setIsLibraryOpen(true)}
-                                className="w-full h-full min-h-70 border-2 border-dashed border-main-border rounded-xl flex flex-col items-center justify-center gap-4 group hover:border-main-border/70 hover:bg-on-surface-variant/7 cursor-pointer transition-all">
-                                <div className="w-14 h-14 rounded-full flex items-center justify-center transition-all">
+                                className="w-full h-full min-h-70 border-2 border-dashed border-main-border rounded-xl flex flex-col items-center justify-center gap-4 hover:border-main-border/70 hover:bg-on-surface-variant/7 cursor-pointer transition-all">
+                                <div className="w-14 h-14 rounded-full flex items-center justify-center">
                                     <span className="material-symbols-outlined text-brand-blue text-4xl!">add_circle</span>
                                 </div>
                                 <div className="text-center">
@@ -215,22 +223,18 @@ export default function Dashboard() {
                 {isLibraryOpen && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-md" onClick={() => setIsLibraryOpen(false)} />
-
                         <div className="bg-surface-container border border-main-border/80 rounded-2xl w-full max-w-xl max-h-[80vh] overflow-y-auto p-6 z-10 shadow-2xl relative">
-                            {/* Mostrar el apartado de biblioteca de widgets */}
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-xl! font-bold text-on-surface tracking-tight">Biblioteca de Widgets</h2>
-                                    <span class="w-1 h-1 rounded-full bg-on-surface"></span>
+                                    <span className="w-1 h-1 rounded-full bg-on-surface"></span>
                                     <h2 className="text-xl! font-bold text-on-surface tracking-tight">KYROSYS</h2>
                                 </div>
-
                                 <button onClick={() => setIsLibraryOpen(false)} className="w-8 h-8 rounded-full bg-surface flex items-center justify-center cursor-pointer hover:bg-on-surface-variant/12 active:scale-95 transition-colors">
                                     <span className="material-symbols-outlined text-sm">close</span>
                                 </button>
                             </div>
 
-                            {/* Mostrar los widgets disponibles para agregar */}
                             <div className="space-y-3">
                                 {bibliotecaWidgets.filter(w => !widgetsActivos.find(a => a.id === w.id)).map((widget) => (
                                     <div key={widget.id} className="bg-surface p-4 rounded-xl border border-main-border/50 flex items-center justify-between gap-4">

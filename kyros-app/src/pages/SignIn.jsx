@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import kyrosLogo from '../assets/kyros.png'
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
+import { insforge } from '../lib/insforge';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
 
 const SignIn = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (searchParams.get('error') === 'expired') {
+            withReactContent(Swal).fire({
+                title: <i>Sesión finalizada</i>,
+                text: 'Su sesión ha expirado por seguridad. Por favor, ingrese de nuevo.',
+                icon: 'info',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#003f87',
+            });
+        }
+    }, [searchParams]);
 
     const [formData, setFormData] = useState({
         email: '',
@@ -22,37 +36,46 @@ const SignIn = () => {
         e.preventDefault();
 
         try {
-            const response = await fetch(`/api/auth/signin`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password
-                })
+            const { data, error } = await insforge.auth.signInWithPassword({
+                email: formData.email,
+                password: formData.password,
             });
 
-            const data = await response.json();
-            if (response.ok) {
+            if (error) throw error;
+
+            if (data.user) {
                 withReactContent(Swal).fire({
                     title: <i>Se ha iniciado sesión</i>,
                     icon: 'success',
                     confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#003f87',
                 })
-                localStorage.setItem('user', JSON.stringify(data.user));
-                navigate('/dashboard');
-            } else {
-                withReactContent(Swal).fire({
-                    title: <i>Error al iniciar sesión</i>,
-                    text: 'Usuario o contraseña incorrectos. Por favor, intente de nuevo.',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#ba1a1a',
-                })
-            }
+                // Fetch profile from user_profiles table (companyName, adminPin)
+                const { data: profileRow } = await insforge
+                    .from('user_profiles')
+                    .select('company_name, admin_pin')
+                    .eq('id', data.user.id)
+                    .single();
 
+                const userData = {
+                    id: data.user.id,
+                    Email: data.user.email,
+                    companyId: data.user.id,
+                    companyName: profileRow?.company_name ?? '',
+                    adminPin: profileRow?.admin_pin ?? '',
+                };
+                localStorage.setItem('user', JSON.stringify(userData));
+                navigate('/dashboard');
+            }
         } catch (error) {
             console.error("Error:", error);
+            withReactContent(Swal).fire({
+                title: <i>Error al iniciar sesión</i>,
+                text: error.message || 'Usuario o contraseña incorrectos. Por favor, intente de nuevo.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#ba1a1a',
+            })
         }
     }
 
@@ -73,7 +96,7 @@ const SignIn = () => {
 
                             <form className="space-y-6" onSubmit={handleSubmit}>
                                 <div className="space-y-2">
-                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="operator-id">Usuario / Correo electrónico</label>
+                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="operator-id">Usuario / Correo electrónico</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
                                             <span className="material-symbols-outlined text-[20px]!">account_circle</span>
@@ -90,7 +113,7 @@ const SignIn = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="security-key">Contraseña</label>
+                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="security-key">Contraseña</label>
                                     </div>
 
                                     <div className="relative group">

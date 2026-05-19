@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { insforge } from '../lib/insforge';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
@@ -15,19 +15,19 @@ const SectorCards = ({ sectors, loading, handleEditClick, btnDelClick, handleDiv
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {sectors.map((sector) => {
-                const isAlert = sector.Status === 'alert' || sector.Status === 'maintenance';
+                const isAlert = sector.status === 'alert' || sector.status === 'maintenance';
 
                 const themeColor = isAlert ? 'error' : 'brand-blue';
                 const bgColor = isAlert ? 'bg-maintenance/10' : 'bg-brand-blue/10';
                 const badgeColor = isAlert ? 'bg-maintenance' : 'bg-brand-blue';
 
                 return (
-                    <div key={sector._id} className="md:col-span-4 bg-surface-container border border-brand-blue/10 shadow-sm rounded-xl overflow-hidden flex flex-col hover:shadow-lg transition-all">
-                        <div onClick={() => handleDivClick(sector._id)}
+                    <div key={sector.id} className="md:col-span-4 bg-surface-container border border-brand-blue/10 shadow-sm rounded-xl overflow-hidden flex flex-col hover:shadow-lg transition-all">
+                        <div onClick={() => handleDivClick(sector.id)}
                             className="relative h-48 cursor-pointer">
                             <div className={`absolute inset-0 ${bgColor} flex items-center justify-center`}>
                                 <span className={`material-symbols-outlined text-8xl! ${isAlert ? 'text-maintenance/20' : 'text-brand-blue/30'}`}>
-                                    {sector.Icon || 'precision_manufacturing'}
+                                    {sector.icon || 'precision_manufacturing'}
                                 </span>
                             </div>
 
@@ -38,23 +38,23 @@ const SectorCards = ({ sectors, loading, handleEditClick, btnDelClick, handleDiv
                             </div>
 
                             <div className="absolute bottom-4 left-4 px-3 py-1 rounded backdrop-blur-sm">
-                                <h2 className="text-on-surface text-xl font-inter font-bold">{sector.Name}</h2>
+                                <h2 className="text-on-surface text-xl font-inter font-bold">{sector.name}</h2>
                             </div>
                         </div>
 
                         <div className="p-6 flex-1 flex flex-col">
                             <div className="flex justify-between items-center mb-4">
                                 <span className="text-on-surface-variant text-sm">Dispositivos activos</span>
-                                <span className="text-on-surface font-bold bg-surface-container-high px-3 py-1 rounded-full">{sector.Devices || 0}</span>
+                                <span className="text-on-surface font-bold bg-surface-container-high px-3 py-1 rounded-full">{sector.devices_count || 0}</span>
                             </div>
 
                             <div className="mt-auto flex gap-3">
-                                <button onClick={() => handleEditClick(sector._id)}
+                                <button onClick={() => handleEditClick(sector.id)}
                                     className="flex-1 py-2 text-brand-blue font-bold text-sm bg-brand-blue/10 rounded-md cursor-pointer hover:bg-brand-blue hover:text-white active:scale-95 transition-all">
                                     <span className="material-symbols-outlined text-base! mr-2">edit</span>
                                     Editar sector
                                 </button>
-                                <button onClick={() => btnDelClick(sector._id, sector.Name || sector.SectorName)}
+                                <button onClick={() => btnDelClick(sector.id, sector.name)}
                                     className="px-3 py-2 text-outline cursor-pointer hover:bg-error/10 hover:text-error rounded-md transition-colors">
                                     <span className="material-symbols-outlined text-sm">delete</span>
                                 </button>
@@ -73,22 +73,74 @@ const Telemetry = () => {
 
     const [sectors, setSectors] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [telemetry, setTelemetry] = useState([]);
+    const [rules, setRules] = useState([]);
 
     // Plug & Play
     const [nodoDescubierto, setNodoDescubierto] = useState(null);
     const [vinculando, setVinculando] = useState(false);
 
+    const _u = JSON.parse(localStorage.getItem('user'));
+    const user = _u ? { ..._u, companyId: _u.companyId ?? _u.id } : null;
+
+    // Simular detección de hardware (Plug & Play) despues de 5 segundos
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setNodoDescubierto({
+                tipo: 'KYROS Satélite - Sensor Temp/Hum',
+                mac: 'AC:67:B2:11:44:EE'
+            });
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    const aceptarVinculacion = async () => {
+        setVinculando(true);
+        
+        try {
+            const newSector = {
+                name: "Nuevo Sector " + (sectors.length + 1),
+                sector_id: "SEC-" + Math.floor(1000 + Math.random() * 9000),
+                status: 'online',
+                devices_count: 1,
+                company_id: user?.companyId
+            };
+
+            const { error } = await insforge
+                .from('sectors')
+                .insert([newSector]);
+
+            if (error) throw error;
+
+            MySwal.fire({
+                title: 'Dispositivo Vinculado',
+                text: 'El sensor ha sido registrado exitosamente en un nuevo sector.',
+                icon: 'success',
+                confirmButtonText: 'Genial',
+                confirmButtonColor: '#003f87',
+            });
+
+            setSectors([...sectors, newSector]);
+            setNodoDescubierto(null);
+        } catch (error) {
+            console.error("Error vinculando:", error);
+        } finally {
+            setVinculando(false);
+        }
+    };
+
     // Obtener todos los sectores vinculados
     useEffect(() => {
         const fetchSectors = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.post('/api/sectors/sectors-info', {}, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                setSectors(response.data.sectors);
+                const { data, error } = await insforge
+                    .from('sectors')
+                    .select('*')
+                    .eq('company_id', user?.companyId);
+                
+                if (error) throw error;
+                setSectors(data || []);
             } catch (error) {
                 console.error("Error fetching sectors:", error);
             } finally {
@@ -96,58 +148,86 @@ const Telemetry = () => {
             }
         };
 
-        fetchSectors();
-    }, []);
-
-    // --- EFECTO PARA BUSCAR NUEVOS SENSORES ESP-NOW ---
-    useEffect(() => {
-        const buscarNuevosSensores = async () => {
+        const fetchRules = async () => {
             try {
-                const res = await fetch('/api/iot/sensores/pendientes');
-                const pendientes = await res.json();
-                if (pendientes.length > 0) setNodoDescubierto(pendientes[0]);
-                else setNodoDescubierto(null);
+                const { data, error } = await insforge
+                    .from('rules')
+                    .select('*')
+                    .eq('company_id', user?.companyId)
+                    .eq('activa', true);
+                
+                if (error) throw error;
+                setRules(data || []);
             } catch (error) {
-                console.error("Error buscando nodos pendientes", error);
+                console.error("Error fetching rules:", error);
             }
         };
 
-        buscarNuevosSensores();
-        const intervaloPendientes = setInterval(buscarNuevosSensores, 3000);
-        return () => clearInterval(intervaloPendientes);
+        fetchSectors();
+        fetchRules();
     }, []);
 
-    const aceptarVinculacion = async () => {
-        setVinculando(true);
-        try {
-            await fetch('/api/iot/sensores/registrar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mac: nodoDescubierto.mac, sector: 'Planta Principal' })
-            });
-            setVinculando(false);
-            setNodoDescubierto(null);
-            MySwal.fire('¡Vinculado!', 'Módulo registrado en KYROS', 'success');
-        } catch (error) {
-            console.error("Error al registrar", error);
-            setVinculando(false);
+    // Polling de telemetría cada 10s
+    useEffect(() => {
+        const fetchTelemetry = async () => {
+            try {
+                const { data, error } = await insforge
+                    .from('telemetry')
+                    .select('*')
+                    .limit(50);
+                
+                if (error) throw error;
+                setTelemetry(data || []);
+            } catch (error) {
+                console.error("Error fetching telemetry:", error);
+            }
+        };
+
+        fetchTelemetry();
+        const interval = setInterval(fetchTelemetry, 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Agrupar telemetría por tipo para mostrar el último valor de cada "sensor"
+    const latestSensors = telemetry.reduce((acc, curr) => {
+        if (!acc[curr.type]) {
+            acc[curr.type] = curr;
+        }
+        return acc;
+    }, {});
+
+    // Evaluar si un sensor tiene una alerta activa basada en las reglas
+    const checkAlert = (sensorType, value) => {
+        const rule = rules.find(r => r.metrica === sensorType);
+        if (!rule) return false;
+
+        const val = Number(value);
+        const threshold = Number(rule.valor);
+
+        switch (rule.condicion) {
+            case '>': return val > threshold;
+            case '<': return val < threshold;
+            case '==': return val === threshold;
+            case '>=': return val >= threshold;
+            case '<=': return val <= threshold;
+            default: return false;
         }
     };
 
     // Num total de sensores
-    const totalSensors = sectors.reduce((sum, sector) => sum + (Number(sector.Devices) || 0), 0);
+    const totalSensors = sectors.reduce((sum, sector) => sum + (Number(sector.devices_count) || 0), 0);
 
     // Num de alertas (alert o maintenance)
     const totalAlerts = sectors.filter(sector =>
-        sector.Status === 'alert' || sector.Status === 'maintenance'
+        sector.status === 'alert' || sector.status === 'maintenance'
     ).length;
 
     // Redireccionar a la vista de módulos del sector específico
     const handleDivClick = (sectorId) => {
-        const sectorInfo = sectors.find(s => s._id === sectorId); // Obtener el ID para el sector seleccionado
+        const sectorInfo = sectors.find(s => s.id === sectorId); 
 
         navigate('/modules', {
-            state: { sector: sectorInfo } // Pasar el objeto sector para no pasar ID por URL
+            state: { sector: sectorInfo } 
         });
     };
 
@@ -164,24 +244,11 @@ const Telemetry = () => {
             confirmButtonColor: '#003f87',
             showLoaderOnConfirm: true,
             preConfirm: async (inputPin) => {
-                try {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch('/api/auth/admin-verify', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ pin: inputPin })
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) {
-                        throw new Error(data.error || 'PIN Incorrecto');
-                    }
-                    return data;
-                } catch (error) {
-                    Swal.showValidationMessage(`Error: ${error.message}`);
+                // Validación local contra los metadatos de InsForge
+                if (inputPin === user?.adminPin) {
+                    return { success: true };
+                } else {
+                    Swal.showValidationMessage(`PIN Incorrecto`);
                 }
             },
             allowOutsideClick: () => !Swal.isLoading()
@@ -194,11 +261,11 @@ const Telemetry = () => {
 
     // Redireccionar a la vista de edición del sector específico (si es admin)
     const handleEditClick = (sectorId) => {
-        const sectorToEdit = sectors.find(s => s._id === sectorId); // Obtener el ID para el sector seleccionado
+        const sectorToEdit = sectors.find(s => s.id === sectorId); 
 
         handleAdminAction(() => {
             navigate('/edit-sector', {
-                state: { sector: sectorToEdit } // Pasar el objeto sector para no pasar ID por URL
+                state: { sector: sectorToEdit } 
             });
         });
     };
@@ -207,17 +274,12 @@ const Telemetry = () => {
     const btnDelClick = (sectorId, sectorName) => {
         handleAdminAction(async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`/api/sectors/delete/${sectorId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const { error } = await insforge
+                    .from('sectors')
+                    .delete()
+                    .eq('id', sectorId);
 
-                if (!response.ok) {
-                    throw new Error('Error al eliminar el sector en el servidor');
-                }
+                if (error) throw error;
 
                 MySwal.fire({
                     title: 'Sector Eliminado',
@@ -226,7 +288,7 @@ const Telemetry = () => {
                     confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#003f87',
                 }).then(() => {
-                    window.location.reload();
+                    setSectors(sectors.filter(s => s.id !== sectorId));
                 });
             } catch (error) {
                 MySwal.fire({
@@ -304,7 +366,48 @@ const Telemetry = () => {
                     </div>
                 </div>
 
+                {/* --- SECCIÓN SENSORES EN VIVO (G4) --- */}
+                <h2 className="text-base font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-2xl!">sensors</span>
+                    Sensores en Vivo
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12">
+                    {Object.values(latestSensors).map((sensor) => {
+                        const isAlert = checkAlert(sensor.type, sensor.value);
+                        return (
+                            <div key={sensor.type} className={`p-4 rounded-xl border transition-all ${isAlert ? 'bg-error/10 border-error/30' : 'bg-surface-container border-brand-blue/10'}`}>
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{sensor.type}</span>
+                                    {isAlert && (
+                                        <span className="flex h-2 w-2 rounded-full bg-error animate-pulse"></span>
+                                    )}
+                                </div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className={`text-2xl font-black ${isAlert ? 'text-error' : 'text-on-surface'}`}>{sensor.value}</span>
+                                    <span className="text-xs text-on-surface-variant">
+                                        {sensor.type === 'temperatura' ? '°C' : (sensor.type === 'presion' ? 'PSI' : '')}
+                                    </span>
+                                </div>
+                                {isAlert && (
+                                    <div className="mt-2 px-2 py-0.5 bg-error text-white text-[9px] font-black uppercase rounded text-center tracking-tighter">
+                                        Umbral Superado
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                    {Object.keys(latestSensors).length === 0 && (
+                        <div className="col-span-full py-10 text-center text-on-surface-variant italic">
+                            Esperando datos de telemetría...
+                        </div>
+                    )}
+                </div>
+
                 {/* Cargar los sectores de manera dinámica */}
+                <h2 className="text-base font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-2xl!">factory</span>
+                    Sectores Industriales
+                </h2>
                 <SectorCards
                     sectors={sectors}
                     loading={loading}

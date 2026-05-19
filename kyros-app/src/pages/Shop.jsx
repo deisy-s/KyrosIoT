@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { insforge } from '../lib/insforge';
 import '../App.css';
 
 const ProductCard = ({ products, loading }) => {
@@ -13,20 +13,20 @@ const ProductCard = ({ products, loading }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
             {products.map((product) => {
                 return (
-                    <div key={product._id} className="bg-surface-container cursor-default rounded-2xl border border-brand-blue/10 shadow-sm overflow-hidden hover:shadow-lg transition-all flex flex-col">
+                    <div key={product.id} className="bg-surface-container cursor-default rounded-2xl border border-brand-blue/10 shadow-sm overflow-hidden hover:shadow-lg transition-all flex flex-col">
                         <div className="h-36 bg-surface-container flex items-center justify-center relative">
                             <span className="material-symbols-outlined text-6xl! pt-5 text-brand-blue/20">
-                                {product.Icon}
+                                {product.image_url}
                             </span>
                             <span className="absolute top-4 left-4 bg-brand-blue/10 text-brand-blue text-sm font-bold uppercase px-2 py-1 rounded tracking-tighter">
-                                {product.Tag}
+                                {product.category === 'Hub' ? 'Puerta de enlace' : (product.category === 'Package' ? 'Paquete' : 'Sensor')}
                             </span>
                         </div>
                         <div className="p-5 flex-1 flex flex-col">
-                            <h3 className="text-on-surface font-bold text-base mb-1">{product.Name}</h3>
-                            <p className="text-sm text-on-surface-variant mb-4 leading-relaxed">{product.Description}</p>
+                            <h3 className="text-on-surface font-bold text-base mb-1">{product.name}</h3>
+                            <p className="text-sm text-on-surface-variant mb-4 leading-relaxed">{product.description}</p>
                             <div className="mt-auto flex items-center justify-between">
-                                <span className="text-on-surface font-black text-base">{product.Price} <span className="text-base font-normal text-on-surface">MXN</span></span>
+                                <span className="text-on-surface font-black text-base">${Number(product.price).toLocaleString()} <span className="text-base font-normal text-on-surface">MXN</span></span>
                                 <button className="p-2 bg-brand-blue text-white rounded-lg hover:scale-110 transition-transform cursor-pointer">
                                     <span className="material-symbols-outlined text-sm">add_shopping_cart</span>
                                 </button>
@@ -47,8 +47,12 @@ const Shop = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get('/api/products/products-info', {}, {});
-                setProducts(response.data.products);
+                const { data, error } = await insforge
+                    .from('products')
+                    .select('*')
+                
+                if (error) throw error;
+                setProducts(data || []);
             } catch (error) {
                 console.error("Error fetching products:", error);
             } finally {
@@ -60,11 +64,11 @@ const Shop = () => {
     }, []);
 
     const packages = products.filter(product =>
-        product.Type === 'Package'
+        product.category === 'Package'
     );
 
     const hardware = products.filter(product =>
-        product.Type !== 'Package'
+        product.category !== 'Package'
     );
 
     return (

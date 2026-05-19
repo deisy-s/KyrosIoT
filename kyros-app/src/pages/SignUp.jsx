@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import kyrosLogo from '../assets/kyros.png'
 import { NavLink, useNavigate } from 'react-router-dom';
+import { insforge } from '../lib/insforge';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
@@ -47,37 +48,45 @@ const SignUp = () => {
         }
 
         try {
-            const response = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    companyName: formData.companyName,
-                    email: formData.email,
-                    password: formData.password,
-                    pin: formData.adminPin,
-                })
+            const { data, error } = await insforge.auth.signUp({
+                email: formData.email,
+                password: formData.password,
+                options: {
+                    data: {
+                        companyName: formData.companyName,
+                        companyId: `OP-${Math.floor(1000 + Math.random() * 9000)}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
+                        adminPin: formData.adminPin
+                    }
+                }
             });
 
-            const data = await response.json();
-            if (response.ok) {
+            if (error) throw error;
+
+            if (data.user) {
+                await insforge.from('user_profiles').insert({
+                    id: data.user.id,
+                    company_name: formData.companyName,
+                    admin_pin: formData.adminPin,
+                });
+
                 withReactContent(Swal).fire({
                     title: <i>Cuenta creada exitosamente</i>,
-                    text: "Su empresa cuenta con el ID: " + data.user.CompanyID,
+                    text: "Bienvenido a KYROSYS, " + formData.companyName,
                     icon: 'success',
                     confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#003f87',
                 })
                 navigate('/signin');
-            } else {
-                withReactContent(Swal).fire({
-                    title: <i>Error al crear cuenta</i>,
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#ba1a1a',
-                })
             }
         } catch (error) {
             console.error("Error:", error);
+            withReactContent(Swal).fire({
+                title: <i>Error al crear cuenta</i>,
+                text: error.message,
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#ba1a1a',
+            })
         }
     };
 
@@ -98,7 +107,7 @@ const SignUp = () => {
 
                             <form className="space-y-6" onSubmit={handleSubmit}>
                                 <div className="space-y-2">
-                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="operator-id">Nombre de la empresa</label>
+                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="company-name">Nombre de la empresa</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
                                             <span className="material-symbols-outlined text-[20px]!">account_circle</span>
@@ -111,7 +120,7 @@ const SignUp = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="operator-id">Correo electrónico</label>
+                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="email">Correo electrónico</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
                                             <span className="material-symbols-outlined text-[20px]!">mail</span>
@@ -125,7 +134,7 @@ const SignUp = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="security-key">Contraseña</label>
+                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="password">Contraseña</label>
                                     </div>
 
                                     <div className="relative group">
@@ -161,7 +170,7 @@ const SignUp = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="security-key">Ingrese de nuevo su contraseña</label>
+                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="confirm-password">Ingrese de nuevo su contraseña</label>
                                     </div>
 
                                     <div className="relative group">
@@ -177,7 +186,7 @@ const SignUp = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="security-key">PIN de administrador</label>
+                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="admin-pin">PIN de administrador</label>
                                     </div>
 
                                     <div className="relative group">

@@ -1,24 +1,92 @@
-# KYROS Web Platform - Dashboard Industrial
+# KYROS Web Platform — Dashboard Industrial IoT
 
-Interfaz gráfica de usuario (GUI) para la gestión, monitorización y control de la planta industrial. Diseñada con React, Vite y Tailwind CSS, ofreciendo una experiencia moderna, rápida y adaptable.
+Plataforma web industrial para monitorear, automatizar y controlar plantas de producción en tiempo real. Construida con React + Vite + TailwindCSS en el frontend e InsForge (backend-as-a-service compatible con Supabase) como base de datos y autenticación.
 
-## 🟢 Funcionalidades Implementadas (Core Funcional)
+---
 
-* **Dashboard de Telemetría:** Visualización de métricas en tiempo real. Integración de gráficos SVG dinámicos conectados a la API que dibujan curvas de temperatura históricas.
-* **Monitor de Dispositivos Activos:** Algoritmo que filtra direcciones MAC únicas provenientes de la base de datos para mostrar el número real de sensores operando en la planta.
-* **Panel de Automatización (Override):** Interfaz industrial de control bidireccional. Permite al usuario accionar visualmente actuadores críticos y enviar la señal de activación/corte a la placa PCB física a través del backend.
-* **Enrutamiento (React Router):** Navegación fluida entre las vistas de Dashboard, Telemetría, Automatización y submódulos de gestión.
+## Stack Tecnológico
 
-## 🟡 Pendientes y Roadmap (Visión Comercial y Escalabilidad)
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | React 19 + Vite + TailwindCSS 4 |
+| Backend | InsForge (Supabase-compatible) |
+| Edge Functions | Deno / TypeScript |
+| Hardware | ESP32 (KYROSYS Core) + sensores satélite via ESP-NOW |
+| Deploy | Vercel |
 
-* **Gestión de Sectores y Monitoreo de Conexión:** 
-  * Implementar alertas visuales inmediatas en caso de pérdida de comunicación (desconexión) con un Core específico.
-* **Monitoreo de sensores:** 
-  * Mostrar datos en tiempo real de módulos sensores
-  * Mostrar alertas visuales al detectar valores fuera del valor umbral
-  * Verificar conexión entre módulo sensor y módulo hub
-* **Onboarding Plug & Play de Nodos:** Crear un flujo de notificaciones donde el KYROS Core avise autónomamente a la interfaz web cuando detecte un nuevo módulo sensor en la zona. La UI debe permitir registrarlo, nombrarlo y comenzar su monitoreo continuo (incluyendo alertas de caída del sensor).
-* **Creador de Automatizaciones Personalizadas:** 
-  * Desarrollar una interfaz donde el usuario puede seleccionar un sector y sensor para el cual se agrega una regla lógica
-  * Vincular automatizaciones con esp32 
-* **Despliegue a Producción:** Subir la aplicación final compilada a Render o Vercel
+---
+
+## Funcionalidades Implementadas
+
+### Autenticación
+- Registro e inicio de sesión con InsForge Auth
+- Rutas protegidas — redirige a `/signin` si no hay sesión activa
+- Perfil de usuario con nombre de empresa y PIN de administrador (`user_profiles`)
+
+### Dashboard
+- Widgets de telemetría en vivo (temperatura, humedad, humo)
+- Gráficas históricas con ApexCharts conectadas a InsForge
+- Monitor de dispositivos activos (filtrado por MAC única)
+
+### Telemetría
+- Datos en tiempo real desde sensores ESP32
+- Alertas visuales cuando un valor supera el umbral configurado
+- Banner Plug & Play cuando se detecta un sensor nuevo en la red
+
+### Automatización (Motor de Inferencia)
+- CRUD completo de reglas: *si [métrica] [condición] [valor] → [acción] relay [N]*
+- Motor de inferencia en Edge Function (`telemetry-ingest.ts`): evalúa reglas en cada lectura y actualiza `relay_states` automáticamente
+- Control manual de relés (override) desde la UI
+- Endpoint `rules-sync.ts` para que el ESP32 descargue sus reglas desde la nube
+
+### Sectores
+- Gestión de zonas de la planta con CRUD real en InsForge
+- Badges de desconexión cuando un Core pierde comunicación
+- Edición protegida por PIN de administrador (verificado contra `user_profiles`)
+
+### Catálogo (Shop)
+- Productos y hardware desde tabla `products` en InsForge
+- Filtrado por categoría: Paquetes y Hardware/Sensores
+- Sección de planes de suscripción (Starter / Enterprise)
+
+---
+
+## Esquema de Base de Datos (InsForge)
+
+```sql
+-- Perfil de empresa por usuario
+user_profiles (id UUID PK, company_name, admin_pin)
+
+-- Reglas de automatización
+rules (id, company_id, metrica, condicion, valor, accion, actuador_id, activa, created_at)
+
+-- Estado actual de relés
+relay_states (id, company_id, relay_id, estado, updated_at)
+
+-- Telemetría de sensores
+telemetry (id, company_id, sector_id, mac, temperatura, humedad, humo, created_at)
+
+-- Sectores / zonas de la planta
+sectors (id, company_id, name, status, core_mac, created_at)
+
+-- Catálogo de productos
+products (id, name, description, price, category, image_url)
+```
+
+---
+
+## Desarrollo Local
+
+```bash
+cd kyros-app
+npm install
+npm run dev
+```
+
+## Build y Deploy
+
+```bash
+cd kyros-app
+npm run build
+# Deploy automático via Vercel conectado al repo
+```

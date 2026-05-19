@@ -351,10 +351,18 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     <Route path="/help" element={<Help />} />
-                    <Route path="/shop" element={<Shop />} />
+                    <Route path="/shop" element={
+                        <ProtectedRoute>
+                            <Shop />
+                        </ProtectedRoute>
+                    } />
                     <Route path="/signin" element={<SignIn />} />
                     <Route path="/signup" element={<SignUp />} />
-                    <Route path="/automation" element={<Automation />} />
+                    <Route path="/automation" element={
+                        <ProtectedRoute>
+                            <Automation />
+                        </ProtectedRoute>
+                    } />
 
                 </Routes>
             </div>

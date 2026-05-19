@@ -1,0 +1,44 @@
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf
+
+# Ignorar archivos locales de exportación/importación y pruebas
+mongo_dump.json
+export_local.js
+extract_mongo.js
+env
+node_modules/
+.env
+
+# Archivos de prueba y backups locales
+test_insforge.js
+simulate.mjs
+payload.json
+migrate_to_insforge.js
+original_dashboard.jsx
+Dashboard_insforge.jsx
+GEMINI.md
+insforge_functions/_test_minimal.ts
+insforge_functions/get-all-env.ts
+insforge_functions/get-env.ts
+package.json
+package-lock.json
+
+# Archivos accidentales
+10)`
+threshold)
+
+# Ignorar planes generados para el CLI
+planes/

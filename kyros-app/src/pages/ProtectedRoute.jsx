@@ -9,14 +9,8 @@ const ProtectedRoute = ({ children }) => {
     useEffect(() => {
         const checkSession = () => {
             try {
-                // Verificar sesión localmente
                 const user = localStorage.getItem('user');
-                
-                if (!user) {
-                    setIsAuthenticated(false);
-                } else {
-                    setIsAuthenticated(true);
-                }
+                setIsAuthenticated(!!user);
             } catch (err) {
                 console.error("Error validando sesión:", err);
                 setIsAuthenticated(false);
@@ -26,6 +20,12 @@ const ProtectedRoute = ({ children }) => {
         };
 
         checkSession();
+
+        const onStorage = (e) => {
+            if (e.key === 'user') setIsAuthenticated(!!e.newValue);
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
     }, []);
 
     if (loading) {

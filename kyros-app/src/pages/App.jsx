@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import kyrosLogo from '../assets/kyros.png'
+import kyrosLogo from '../assets/kyrosLogo.jpeg'
 import { Routes, Route, Link, NavLink, useLocation } from 'react-router-dom';
 import SignIn from './SignIn.jsx';
 import SignUp from './SignUp.jsx';
@@ -23,7 +23,8 @@ const App = () => {
         location.pathname.includes('/telemetry') ||
         location.pathname.includes('/edit-sector') ||
         location.pathname.includes('/modules') ||
-        location.pathname.includes('/module-info');
+        location.pathname.includes('/module-info') ||
+        location.pathname.includes('/link-device');
 
     const user = JSON.parse(localStorage.getItem('user'));
     const isLoggedIn = !!user;
@@ -76,7 +77,7 @@ const App = () => {
                                         ? "text-brand-blue dark:text-blue-400 font-bold border-b-2 border-brand-blue"
                                         : "text-slate-500 dark:text-slate-400 hover:text-brand-blue"
                                     }`
-                                }>Tienda</NavLink>
+                                }>Catálogo</NavLink>
                         </nav>
                     </div>
 
@@ -102,7 +103,7 @@ const App = () => {
                             {isProfileOpen && (
                                 <>
                                     <div
-                                        class="rounded-md border bg-surface-container p-1 shadow-md grid min-w-40 absolute right-0 mt-2">
+                                        class="rounded-md border border-on-surface-variant/10 bg-surface-container p-1 shadow-md grid min-w-40 absolute right-0 mt-2">
                                         {isLoggedIn ? (
                                             <Link
                                                 onClick={handleLogout}
@@ -134,13 +135,13 @@ const App = () => {
                             <Telemetry />
                         </ProtectedRoute>
                     } />
-                   <Route path="/edit-sector/:id" element={
+                   <Route path="/edit-sector" element={
                         <ProtectedRoute>
                             <EditSector />
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/modules/:id" element={
+                    <Route path="/modules" element={
                         <ProtectedRoute>
                             <Modules />
                         </ProtectedRoute>

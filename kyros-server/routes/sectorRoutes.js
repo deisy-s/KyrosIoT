@@ -4,7 +4,7 @@ const userModel = require('../models/userModel');
 const sectorModel = require('../models/sectorModel.js');
 const verifyToken = require('../middlewares/auth.js');
 
-// 1. OBTENER TODOS LOS SECTORES DE LA EMPRESA (El que ya tenían)
+// Obtener todos los sectores de la empresa
 router.post('/sectors-info', verifyToken, async (req, res) => {
     try{
         const userId = req.user.id; 
@@ -26,7 +26,7 @@ router.post('/sectors-info', verifyToken, async (req, res) => {
     }
 });
 
-// 2. OBTENER UN SECTOR ESPECÍFICO (Para cargar datos en EditSector.jsx)
+// Obtener un sector específico por ID
 router.get('/:id', verifyToken, async (req, res) => {
     try {
         const sector = await sectorModel.findById(req.params.id);
@@ -37,12 +37,11 @@ router.get('/:id', verifyToken, async (req, res) => {
     }
 });
 
-// 3. EDITAR UN SECTOR (Guardar nombre e icono nuevo)
+// Editar un sector
 router.put('/edit/:id', verifyToken, async (req, res) => {
     try {
         const { Name, Icon } = req.body;
         
-        // Actualiza y devuelve el documento nuevo
         const sector = await sectorModel.findByIdAndUpdate(
             req.params.id, 
             { Name, Icon }, 
@@ -56,7 +55,23 @@ router.put('/edit/:id', verifyToken, async (req, res) => {
     }
 });
 
-// 4. ELIMINAR/DESVINCULAR UN SECTOR
+// Actualizar contador de dispositivos en un sector
+router.put('/update-devices/:id', verifyToken, async (req, res) => {
+    try {
+        const { Devices } = req.body; // Nuevo número de dispositivos
+        const sector = await sectorModel.findByIdAndUpdate(
+            req.params.id,
+            { Devices },
+            { new: true }
+        );
+        if (!sector) return res.status(404).json({ error: "Sector no encontrado" });
+        res.status(200).json({ message: "Contador de dispositivos actualizado", sector });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Eliminar un sector
 router.delete('/delete/:id', verifyToken, async (req, res) => {
     try {
         const sector = await sectorModel.findByIdAndDelete(req.params.id);
@@ -67,7 +82,7 @@ router.delete('/delete/:id', verifyToken, async (req, res) => {
     }
 });
 
-// 5. VINCULAR NUEVO KYROSYS CORE (Desde LinkDevice.jsx)
+// Vincular sector nuevo
 router.post('/link', verifyToken, async (req, res) => {
     try {
         const { codigoVinculacion, nombreSector } = req.body;
@@ -87,7 +102,7 @@ router.post('/link', verifyToken, async (req, res) => {
             Name: nombreSector,
             CompanyID: user.CompanyID,
             SectorID: codigoVinculacion,
-            Icon: "precision_manufacturing", // Ícono industrial por defecto
+            Icon: "precision_manufacturing",
             Devices: 0,
             Status: "Activo"
         });

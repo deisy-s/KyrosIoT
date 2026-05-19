@@ -44,7 +44,7 @@ const SignIn = () => {
             } else {
                 withReactContent(Swal).fire({
                     title: <i>Error al iniciar sesión</i>,
-                    text:'Usuario o contraseña incorrectos. Por favor, intente de nuevo.',
+                    text: 'Usuario o contraseña incorrectos. Por favor, intente de nuevo.',
                     icon: 'error',
                     confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#ba1a1a',
@@ -81,7 +81,10 @@ const SignIn = () => {
                                         <input name="email"
                                             value={formData.email}
                                             onChange={handleChange}
-                                            className="block w-full pl-11 pr-4 py-3.5 bg-on-surface-variant/6 text-on-surface font-body text-body-md rounded-lg focus:ring-2 focus:ring-inset focus:ring-primary transition-all duration-200 outline-none" placeholder="e.g. OP-8829-X" required type="text" />
+                                            className="block w-full pl-11 pr-4 py-3.5 bg-on-surface-variant/6 text-on-surface font-body text-body-md rounded-lg focus:ring-2 focus:ring-inset focus:ring-primary transition-all duration-200 outline-none"
+                                            placeholder="e.g. OP-8829-X"
+                                            required
+                                            type="text" />
                                     </div>
                                 </div>
 
@@ -97,7 +100,11 @@ const SignIn = () => {
                                         <input name="password"
                                             value={formData.password}
                                             onChange={handleChange}
-                                            className="block w-full pl-11 pr-4 py-3.5 bg-on-surface-variant/6 text-on-surface font-body text-body-md rounded-lg focus:ring-2 focus:ring-inset focus:ring-primary transition-all duration-200 outline-none" id="security-key" placeholder="••••••••••••" required="" type={showPassword ? "text" : "password"} />
+                                            className="block w-full pl-11 pr-4 py-3.5 bg-on-surface-variant/6 text-on-surface font-body text-body-md rounded-lg focus:ring-2 focus:ring-inset focus:ring-primary transition-all duration-200 outline-none" 
+                                            id="security-key" 
+                                            placeholder="••••••••••••" 
+                                            required
+                                            type={showPassword ? "text" : "password"} />
                                     </div>
                                 </div>
 

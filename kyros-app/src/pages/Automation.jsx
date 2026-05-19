@@ -11,7 +11,7 @@ const Automation = () => {
         const nuevoEstado = !reles[id];
         setReles({ ...reles, [id]: nuevoEstado });
         try {
-            await fetch('http://localhost:5000/api/iot/control', {
+            await fetch('/api/iot/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rele: id, estado: nuevoEstado })
@@ -54,7 +54,6 @@ const Automation = () => {
     return (
         <div className="bg-surface min-h-screen">
             <main className="pt-25 px-6 md:px-12 pb-12 w-full">
-                {/* ENCABEZADO Y TABS */}
                 <header className="mb-10">
                     <h1 className="text-on-surface tracking-[-0.04em] leading-tight">Centro de Control</h1>
                     <p className="text-on-surface-variant text-base max-w-xl mt-2 mb-8">
@@ -62,38 +61,38 @@ const Automation = () => {
                     </p>
 
                     <div className="flex border-b border-outline-variant/20">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('rules')}
-                            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'rules' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+                            className={`px-6 py-3 font-bold text-sm cursor-pointer transition-colors border-b-2 ${activeTab === 'rules' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
                         >
-                            <span className="material-symbols-outlined align-middle mr-2 text-lg">psychology</span>
+                            <span className="material-symbols-outlined align-middle mr-2 text-xl!">psychology</span>
                             Reglas Autónomas
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('manual')}
-                            className={`px-6 py-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'manual' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+                            className={`px-6 py-3 font-bold cursor-pointer text-sm transition-colors border-b-2 ${activeTab === 'manual' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
                         >
-                            <span className="material-symbols-outlined align-middle mr-2 text-lg">pan_tool</span>
+                            <span className="material-symbols-outlined align-middle mr-2 text-xl!">pan_tool</span>
                             Control Manual (Override)
                         </button>
                     </div>
                 </header>
 
-                {/* ================= PESTAÑA: REGLAS AUTOMÁTICAS ================= */}
+                {/* Crear regla */}
                 {activeTab === 'rules' && (
                     <div className="animate-fade-in">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            
-                            {/* FORMULARIO PARA CREAR NUEVA REGLA */}
-                            <div className="lg:col-span-1 bg-surface-container border border-brand-blue/20 rounded-2xl p-6 shadow-sm h-fit">
+
+                            {/* Formulario para crear la regla */}
+                            <div className="lg:col-span-1 bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm h-fit">
                                 <h2 className="text-sm font-bold text-brand-blue uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <span className="material-symbols-outlined">add_circle</span> Crear Nueva Regla
+                                    <span className="material-symbols-outlined text-xl!">add_circle</span> Crear Nueva Regla
                                 </h2>
-                                
+
                                 <form onSubmit={agregarRegla} className="space-y-5">
                                     <div>
                                         <label className="block text-xs font-bold text-on-surface-variant uppercase mb-1">Si la métrica:</label>
-                                        <select value={nuevaRegla.metrica} onChange={(e) => setNuevaRegla({...nuevaRegla, metrica: e.target.value})} className="w-full bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
+                                        <select value={nuevaRegla.metrica} onChange={(e) => setNuevaRegla({ ...nuevaRegla, metrica: e.target.value })} className="w-full bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
                                             <option>Temperatura</option>
                                             <option>Humo / Gases</option>
                                             <option>Humedad Relativa</option>
@@ -102,7 +101,7 @@ const Automation = () => {
                                     <div className="flex gap-3">
                                         <div className="w-1/2">
                                             <label className="block text-xs font-bold text-on-surface-variant uppercase mb-1">Es:</label>
-                                            <select value={nuevaRegla.condicion} onChange={(e) => setNuevaRegla({...nuevaRegla, condicion: e.target.value})} className="w-full bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
+                                            <select value={nuevaRegla.condicion} onChange={(e) => setNuevaRegla({ ...nuevaRegla, condicion: e.target.value })} className="w-full bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
                                                 <option>Mayor a</option>
                                                 <option>Menor a</option>
                                                 <option>Igual a</option>
@@ -110,17 +109,17 @@ const Automation = () => {
                                         </div>
                                         <div className="w-1/2">
                                             <label className="block text-xs font-bold text-on-surface-variant uppercase mb-1">Valor:</label>
-                                            <input type="number" required value={nuevaRegla.valor} onChange={(e) => setNuevaRegla({...nuevaRegla, valor: e.target.value})} placeholder="Ej. 40" className="w-full bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue" />
+                                            <input type="number" required value={nuevaRegla.valor} onChange={(e) => setNuevaRegla({ ...nuevaRegla, valor: e.target.value })} placeholder="Ej. 40" className="w-full bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-on-surface-variant uppercase mb-1">Entonces:</label>
                                         <div className="flex gap-3">
-                                            <select value={nuevaRegla.accion} onChange={(e) => setNuevaRegla({...nuevaRegla, accion: e.target.value})} className="w-1/3 bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
+                                            <select value={nuevaRegla.accion} onChange={(e) => setNuevaRegla({ ...nuevaRegla, accion: e.target.value })} className="w-1/3 bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
                                                 <option>Encender</option>
                                                 <option>Apagar</option>
                                             </select>
-                                            <select value={nuevaRegla.actuador} onChange={(e) => setNuevaRegla({...nuevaRegla, actuador: e.target.value})} className="w-2/3 bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
+                                            <select value={nuevaRegla.actuador} onChange={(e) => setNuevaRegla({ ...nuevaRegla, actuador: e.target.value })} className="w-2/3 bg-surface border border-outline-variant/20 rounded-lg p-3 text-on-surface text-sm outline-none focus:border-brand-blue">
                                                 <option>Extractores</option>
                                                 <option>Alimentación Principal</option>
                                                 <option>Sirena de Emergencia</option>
@@ -128,22 +127,22 @@ const Automation = () => {
                                             </select>
                                         </div>
                                     </div>
-                                    <button type="submit" className="w-full py-3 mt-4 bg-brand-blue text-white rounded-lg font-bold text-sm shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">
+                                    <button type="submit" className="w-full py-3 mt-4 technical-gradient text-white rounded-lg font-bold text-sm shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-95 transition-all">
                                         Guardar Regla Lógica
                                     </button>
                                 </form>
                             </div>
 
-                            {/* LISTA DE REGLAS ACTIVAS */}
+                            {/* Lista de reglas activas */}
                             <div className="lg:col-span-2 space-y-4">
-                                <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Reglas en Operación (Edge)</h2>
+                                <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Reglas en Operación</h2>
                                 {reglas.length === 0 ? (
                                     <div className="p-8 text-center text-on-surface-variant/50 border border-dashed border-outline-variant/30 rounded-2xl">
                                         No hay automatizaciones configuradas.
                                     </div>
                                 ) : (
                                     reglas.map((regla) => (
-                                        <div key={regla.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border transition-all ${regla.activa ? 'bg-surface-container border-brand-blue/30 shadow-sm' : 'bg-surface-container-low border-outline-variant/10 opacity-60'}`}>
+                                        <div key={regla.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border transition-all ${regla.activa ? 'bg-surface-container border-brand-blue/10 shadow-sm' : 'bg-surface-container/30 border-on-surface-variant/50 opacity-60'}`}>
                                             <div className="flex items-center gap-4 mb-4 md:mb-0">
                                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${regla.activa ? 'bg-brand-blue/10 text-brand-blue' : 'bg-surface text-on-surface-variant'}`}>
                                                     <span className="material-symbols-outlined">{regla.metrica === 'Temperatura' ? 'device_thermostat' : regla.metrica === 'Humedad Relativa' ? 'water_drop' : 'detector_smoke'}</span>
@@ -159,11 +158,12 @@ const Automation = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-end gap-4">
-                                                <button onClick={() => toggleRegla(regla.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${regla.activa ? 'bg-brand-blue' : 'bg-outline-variant'}`}>
+                                                <button onClick={() => toggleRegla(regla.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${regla.activa ? 'bg-brand-blue' : 'bg-on-surface-variant'}`}>
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${regla.activa ? 'translate-x-6' : 'translate-x-1'}`} />
                                                 </button>
-                                                <button onClick={() => eliminarRegla(regla.id)} className="text-outline-variant hover:text-error transition-colors cursor-pointer p-2">
-                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                <button onClick={() => eliminarRegla(regla.id)}
+                                                    className="p-2 text-xl! text-outline-variant cursor-pointer hover:text-error hover:bg-error/10 rounded-xl transition-all" title="Desvincular nodo" >
+                                                    <span className="align-middle material-symbols-outlined">delete</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -178,9 +178,9 @@ const Automation = () => {
                 {activeTab === 'manual' && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-8 animate-fade-in">
                         {actuadores.map((act) => (
-                            <div key={act.id} className="md:col-span-6 lg:col-span-3 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col transition-all hover:-translate-y-1 border border-outline-variant/10">
-                                <div className="relative h-32 bg-surface-container-low flex items-center justify-center border-b border-outline-variant/10">
-                                    <span className={`material-symbols-outlined text-5xl transition-colors duration-300 ${reles[act.id] ? (act.id === 1 || act.id === 3 ? 'text-error' : 'text-brand-blue') : 'text-on-surface-variant/30'}`}>
+                            <div key={act.id} className="md:col-span-6 lg:col-span-3 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col transition-all hover:-translate-y-1 border border-brand-blue/10 shadow-sm">
+                                <div className="relative h-32 bg-surface-container-low flex items-center justify-center border-b border-brand-blue/50">
+                                    <span className={`material-symbols-outlined text-5xl! transition-colors duration-300 ${reles[act.id] ? (act.id === 1 || act.id === 3 ? 'text-error' : 'text-brand-blue') : 'text-on-surface-variant/30'}`}>
                                         {act.icono}
                                     </span>
                                     <div className="absolute top-4 right-4">
@@ -189,20 +189,19 @@ const Automation = () => {
                                         </span>
                                     </div>
                                 </div>
-                                
+
                                 <div className="p-6 flex-1 flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">{act.sector}</span>
-                                    <h3 className="text-on-surface font-bold text-lg leading-tight mb-2">{act.equipo}</h3>
-                                    <p className="text-xs text-on-surface-variant mb-6">{act.descripcion}</p>
-                                    
+                                    <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{act.sector}</span>
+                                    <h3 className="text-on-surface font-bold text-xl leading-tight mb-2">{act.equipo}</h3>
+                                    <p className="text-base text-on-surface-variant mb-6">{act.descripcion}</p>
+
                                     <div className="mt-auto">
                                         <button
                                             onClick={() => toggleRele(act.id)}
-                                            className={`w-full py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 ${
-                                                reles[act.id] 
-                                                ? 'bg-surface-container-high text-on-surface border border-outline hover:bg-error/10 hover:text-error hover:border-error' 
-                                                : 'bg-brand-blue/10 text-brand-blue hover:bg-brand-blue hover:text-white'
-                                            }`}
+                                            className={`w-full py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] transition-all active:scale-95 ${reles[act.id]
+                                                    ? 'bg-surface-container text-on-surface border border-outline hover:bg-error/10 hover:text-error hover:border-error'
+                                                    : 'technical-gradient text-white'
+                                                }`}
                                         >
                                             <span className="material-symbols-outlined text-sm">
                                                 {reles[act.id] ? 'power_settings_new' : 'play_arrow'}

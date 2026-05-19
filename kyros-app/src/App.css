@@ -11,6 +11,8 @@
   --color-on-surface-variant: #424752;
   --color-error: #ba1a1a;
   --color-maintenance: #722b00;
+  --color-main-border: #003f87;
+  --color-light-bg-variant: #eaebed;
 }
 
 @layer base {
@@ -53,6 +55,12 @@
   }
 }
 
+@keyframes phoneWiggle {
+  0% { transform: rotate(-0.2deg); }
+  50% { transform: rotate(0.2deg); }
+  100% { transform: rotate(-0.2deg); }
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -84,9 +92,10 @@ body {
 }
 
 .technical-gradient {
-  background: linear-gradient(135deg, #003f87 0%, #0056b3 100%);
+  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-light) 100%);
 }
 
-#addBtn {
-  background-color: #003f87;
+.jiggle-mode {
+  animation: phoneWiggle 0.25s infinite ease-in-out;
+  border: 2px dashed var(--color-main-border) !important;
 }

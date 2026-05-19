@@ -5,31 +5,7 @@ import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
 
-const SectorCards = ({ handleEditClick, btnDelClick, handleDivClick }) => {
-    const navigate = useNavigate();
-    const [sectors, setSectors] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchSectors = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.post('http://localhost:5000/api/sectors/sectors-info', {}, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                setSectors(response.data.sectors);
-            } catch (error) {
-                console.error("Error fetching sectors:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchSectors();
-    }, []);
-
+const SectorCards = ({ sectors, loading, handleEditClick, btnDelClick, handleDivClick }) => {
     if (loading) return <div className="text-white">Cargando sectores...</div>;
 
     if (sectors.length === 0) {
@@ -39,14 +15,14 @@ const SectorCards = ({ handleEditClick, btnDelClick, handleDivClick }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {sectors.map((sector) => {
-                const isAlert = sector.status === 'alert' || sector.status === 'maintenance';
+                const isAlert = sector.Status === 'alert' || sector.Status === 'maintenance';
 
                 const themeColor = isAlert ? 'error' : 'brand-blue';
                 const bgColor = isAlert ? 'bg-maintenance/10' : 'bg-brand-blue/10';
                 const badgeColor = isAlert ? 'bg-maintenance' : 'bg-brand-blue';
 
                 return (
-                    <div key={sector._id} className="md:col-span-4 bg-surface-container rounded-xl overflow-hidden ambient-glow flex flex-col">
+                    <div key={sector._id} className="md:col-span-4 bg-surface-container border border-brand-blue/10 shadow-sm rounded-xl overflow-hidden flex flex-col hover:shadow-lg transition-all">
                         <div onClick={() => handleDivClick(sector._id)}
                             className="relative h-48 cursor-pointer">
                             <div className={`absolute inset-0 ${bgColor} flex items-center justify-center`}>
@@ -61,8 +37,8 @@ const SectorCards = ({ handleEditClick, btnDelClick, handleDivClick }) => {
                                 </span>
                             </div>
 
-                            <div className="absolute bottom-4 left-4 bg-surface/80 px-3 py-1 rounded backdrop-blur-sm">
-                                <h2 className="text-on-surface text-xl font-inter font-bold">{sector.Name || sector.SectorName}</h2>
+                            <div className="absolute bottom-4 left-4 px-3 py-1 rounded backdrop-blur-sm">
+                                <h2 className="text-on-surface text-xl font-inter font-bold">{sector.Name}</h2>
                             </div>
                         </div>
 
@@ -75,6 +51,7 @@ const SectorCards = ({ handleEditClick, btnDelClick, handleDivClick }) => {
                             <div className="mt-auto flex gap-3">
                                 <button onClick={() => handleEditClick(sector._id)}
                                     className="flex-1 py-2 text-brand-blue font-bold text-sm bg-brand-blue/10 rounded-md cursor-pointer hover:bg-brand-blue hover:text-white active:scale-95 transition-all">
+                                    <span className="material-symbols-outlined text-base! mr-2">edit</span>
                                     Editar sector
                                 </button>
                                 <button onClick={() => btnDelClick(sector._id, sector.Name || sector.SectorName)}
@@ -94,15 +71,39 @@ const Telemetry = () => {
     const navigate = useNavigate();
     const MySwal = withReactContent(Swal);
 
-    // --- ESTADOS DE HARDWARE (PLUG & PLAY) ---
+    const [sectors, setSectors] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Plug & Play
     const [nodoDescubierto, setNodoDescubierto] = useState(null);
     const [vinculando, setVinculando] = useState(false);
+
+    // Obtener todos los sectores vinculados
+    useEffect(() => {
+        const fetchSectors = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.post('/api/sectors/sectors-info', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                setSectors(response.data.sectors);
+            } catch (error) {
+                console.error("Error fetching sectors:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSectors();
+    }, []);
 
     // --- EFECTO PARA BUSCAR NUEVOS SENSORES ESP-NOW ---
     useEffect(() => {
         const buscarNuevosSensores = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/iot/sensores/pendientes');
+                const res = await fetch('/api/iot/sensores/pendientes');
                 const pendientes = await res.json();
                 if (pendientes.length > 0) setNodoDescubierto(pendientes[0]);
                 else setNodoDescubierto(null);
@@ -119,7 +120,7 @@ const Telemetry = () => {
     const aceptarVinculacion = async () => {
         setVinculando(true);
         try {
-            await fetch('http://localhost:5000/api/iot/sensores/registrar', {
+            await fetch('/api/iot/sensores/registrar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mac: nodoDescubierto.mac, sector: 'Planta Principal' })
@@ -133,10 +134,24 @@ const Telemetry = () => {
         }
     };
 
+    // Num total de sensores
+    const totalSensors = sectors.reduce((sum, sector) => sum + (Number(sector.Devices) || 0), 0);
+
+    // Num de alertas (alert o maintenance)
+    const totalAlerts = sectors.filter(sector =>
+        sector.Status === 'alert' || sector.Status === 'maintenance'
+    ).length;
+
+    // Redireccionar a la vista de módulos del sector específico
     const handleDivClick = (sectorId) => {
-        navigate(`/modules/${sectorId}`);
+        const sectorInfo = sectors.find(s => s._id === sectorId); // Obtener el ID para el sector seleccionado
+
+        navigate('/modules', {
+            state: { sector: sectorInfo } // Pasar el objeto sector para no pasar ID por URL
+        });
     };
 
+    // Validar los permisos de administrador antes de editar o eliminar
     const handleAdminAction = async (onSuccess) => {
         const { value: pin } = await withReactContent(Swal).fire({
             title: <i>Ingrese el PIN de administrador</i>,
@@ -151,11 +166,11 @@ const Telemetry = () => {
             preConfirm: async (inputPin) => {
                 try {
                     const token = localStorage.getItem('token');
-                    const response = await fetch('http://localhost:5000/api/auth/admin-verify', {
+                    const response = await fetch('/api/auth/admin-verify', {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}` 
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({ pin: inputPin })
                     });
@@ -177,16 +192,23 @@ const Telemetry = () => {
         }
     }
 
+    // Redireccionar a la vista de edición del sector específico (si es admin)
     const handleEditClick = (sectorId) => {
-        handleAdminAction(() => navigate(`/edit-sector/${sectorId}`));
+        const sectorToEdit = sectors.find(s => s._id === sectorId); // Obtener el ID para el sector seleccionado
+
+        handleAdminAction(() => {
+            navigate('/edit-sector', {
+                state: { sector: sectorToEdit } // Pasar el objeto sector para no pasar ID por URL
+            });
+        });
     };
 
+    // Eliminar el sector específico (si es admin)
     const btnDelClick = (sectorId, sectorName) => {
         handleAdminAction(async () => {
             try {
                 const token = localStorage.getItem('token');
-                // LLAMADA REAL A LA BASE DE DATOS PARA ELIMINAR EL SECTOR
-                const response = await fetch(`http://localhost:5000/api/sectors/delete/${sectorId}`, {
+                const response = await fetch(`/api/sectors/delete/${sectorId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -199,13 +221,21 @@ const Telemetry = () => {
 
                 MySwal.fire({
                     title: 'Sector Eliminado',
-                    text: `El KYROSYS Core de ${sectorName || 'este sector'} ha sido desvinculado de tu empresa.`,
-                    icon: 'success'
+                    text: `El KYROSYS Core de "${sectorName}" ha sido desvinculado de su empresa.`,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#003f87',
                 }).then(() => {
-                    window.location.reload(); // Recargamos para que desaparezca de la pantalla
+                    window.location.reload();
                 });
             } catch (error) {
-                MySwal.fire('Error', error.message, 'error');
+                MySwal.fire({
+                    title: <i>Error</i>,
+                    text: error.message,
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#ba1a1a',
+                })
             }
         });
     };
@@ -213,17 +243,18 @@ const Telemetry = () => {
     return (
         <div className="bg-surface min-h-screen">
             <main className="pt-25 px-6 md:px-12 pb-12 w-full">
+                {/* --- BANNER PLUG & PLAY (HARDWARE) --- */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
-                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight text-4xl font-bold">Telemetría de Planta</h1>
-                        <p className="text-on-surface-variant text-base max-w-xl mt-2">Monitorización del estado en tiempo real para todos los sectores de fabricación</p>
+                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight font-bold">Telemetría de Planta</h1>
+                        <p className="text-on-surface-variant text-base max-w-xl mt-2">Monitorización del estado en tiempo real para todos los sectores de fabricación.</p>
                     </div>
-                    {/* BOTÓN MEJORADO Y ELEGANTE */}
-                    <button 
-                        onClick={() => navigate('/link-device')} 
-                        className="px-5 py-2.5 bg-brand-blue/10 text-brand-blue border border-brand-blue/20 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-brand-blue hover:text-white active:scale-95 transition-all cursor-pointer shadow-sm"
+
+                    <button
+                        onClick={() => navigate('/link-device')}
+                        className="px-5 py-2.5 technical-gradient text-white rounded-lg font-bold text-sm flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-sm"
                     >
-                        <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                        <span className="material-symbols-outlined text-base!">add_circle</span>
                         Vincular Nuevo Core
                     </button>
                 </header>
@@ -254,24 +285,29 @@ const Telemetry = () => {
                     </div>
                 )}
 
+                {/* Tarjetas de sensores y alertas */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-                    <div className="bg-surface-container p-6 rounded-xl ambient-glow">
+                    <div className="bg-surface-container border border-brand-blue/10 shadow-sm p-6 rounded-xl ambient-glow">
                         <p className="text-on-surface-variant text-[0.6875rem] font-bold tracking-[3%] mb-1 uppercase">Dispositivos en planta</p>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-extrabold text-on-surface leading-none">1,234</span>
+                            <span className="text-3xl font-extrabold text-on-surface leading-none">{loading ? "0" : totalSensors.toLocaleString()}</span>
                             <span className="text-on-surface text-sm mb-1">Sensores</span>
                         </div>
                     </div>
-                    <div className="bg-surface-container p-6 rounded-xl ambient-glow">
+
+                    <div className="bg-surface-container p-6 border border-brand-blue/10 shadow-sm rounded-xl ambient-glow">
                         <p className="text-on-surface-variant text-[0.6875rem] font-bold tracking-[3%] mb-1 uppercase">Alertas Críticas</p>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-extrabold text-error leading-none">1</span>
-                            <span className="text-on-surface text-sm mb-1">Mantenimiento Requerido</span>
+                            <span className="text-3xl font-extrabold text-error leading-none">{loading ? "0" : totalAlerts}</span>
+                            <span className="text-on-surface text-sm mb-1">Alertas críticas</span>
                         </div>
                     </div>
                 </div>
 
+                {/* Cargar los sectores de manera dinámica */}
                 <SectorCards
+                    sectors={sectors}
+                    loading={loading}
                     handleEditClick={handleEditClick}
                     btnDelClick={btnDelClick}
                     handleDivClick={handleDivClick}

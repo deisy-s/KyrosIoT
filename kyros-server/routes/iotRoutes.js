@@ -3,33 +3,33 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const sectorModel = require('../models/sectorModel.js'); 
 
-// Definimos un modelo rápido de Telemetría aquí mismo para mantener la limpieza
 const telemetrySchema = new mongoose.Schema({
     mac: String,
     tipo: String,
     valor: Number,
     timestamp: { type: Date, default: Date.now }
 });
-const telemetryModel = mongoose.models.telemetry || mongoose.model('telemetry', telemetrySchema);
+
+const telemetryModel = mongoose.model('telemetry', telemetrySchema);
 
 // Memorias temporales para alta velocidad (Ideal para el control de relés en tiempo real)
 let estadoRelevadores = { 1: false, 2: false, 3: false, 4: false };
 let sensoresPendientes = [];
 
-// --- 1. INGESTA DE TELEMETRÍA (Del ESP32 a la Nube) ---
 router.post('/telemetria', async (req, res) => {
     try {
         const { mac_origen, tipo, valor } = req.body;
         
-        // Guardamos en la base de datos para que las gráficas del Dashboard tengan histórico
         const nuevaLectura = new telemetryModel({
             mac: mac_origen,
             tipo: tipo,
             valor: Number(valor)
         });
-        await nuevaLectura.save();
+
+        // TODO : Save on BD
 
         console.log(`[IIoT] Dato guardado de ${mac_origen}: ${tipo} -> ${valor}`);
+
         res.status(200).send({ mensaje: "Guardado en DB exitosamente" });
     } catch (error) {
         console.error("Error en telemetría:", error);
@@ -37,22 +37,23 @@ router.post('/telemetria', async (req, res) => {
     }
 });
 
-// --- 1.5 OBTENER TELEMETRÍA (Para alimentar las gráficas de React) ---
 router.get('/telemetria/:mac', async (req, res) => {
     try {
-        // Traemos las últimas 20 lecturas ordenadas para la gráfica
+        // Últimas 20 lecturas de la gráfica
         const lecturas = await telemetryModel.find({ mac: req.params.mac }).sort({ timestamp: -1 }).limit(20);
+        
         res.status(200).json(lecturas.reverse());
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// --- 2. AUTOMATIZACIÓN (Override Manual para los KYROSYS Cores) ---
+// Override manual
 router.post('/control', (req, res) => {
     const { rele, estado } = req.body;
     if (rele >= 1 && rele <= 4) {
         estadoRelevadores[rele] = estado;
+        // TODO : Connect to bds
         console.log(`[OVERRIDE] Relé ${rele} -> ${estado ? 'ON' : 'OFF'}`);
         res.status(200).send({ mensaje: "Comando registrado" });
     } else {
@@ -65,7 +66,7 @@ router.get('/control', (req, res) => {
     res.status(200).json(estadoRelevadores);
 });
 
-// --- 3. PLUG & PLAY (Descubrimiento ESP-NOW) ---
+// Descubrir ESP-NOW (Sensores Nuevos) (Plug & Play)
 router.post('/sensores/descubrir', (req, res) => {
     const { mac, tipo } = req.body;
     const yaPendiente = sensoresPendientes.find(s => s.mac === mac);
@@ -77,11 +78,12 @@ router.post('/sensores/descubrir', (req, res) => {
     res.status(200).send({ status: "ok" });
 });
 
+// TODO : Figure out what this is
 router.get('/sensores/pendientes', (req, res) => {
     res.status(200).json(sensoresPendientes);
 });
 
-// --- 4. REGISTRAR SENSOR (Desde el banner de React) ---
+// Figure out what this is
 router.post('/sensores/registrar', async (req, res) => {
     try {
         const { mac, sector } = req.body;

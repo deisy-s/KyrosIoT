@@ -8,7 +8,9 @@ require('dotenv').config();
 const verifyToken = require('./middlewares/auth.js');
 const authRoutes = require('./routes/authRoutes');
 const sectorRoutes = require('./routes/sectorRoutes.js');
+const moduleRoutes = require('./routes/moduleRoutes.js');
 const iotRoutes = require('./routes/iotRoutes.js');
+const productsRoutes = require('./routes/productsRoutes.js');
 
 
 const app = express();
@@ -22,6 +24,8 @@ connectDB();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sectors', sectorRoutes);
+app.use('/api/modules', moduleRoutes);
 app.use('/api/iot', iotRoutes);
+app.use('/api/products', productsRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

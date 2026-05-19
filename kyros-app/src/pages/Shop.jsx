@@ -1,82 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import '../App.css';
+
+const ProductCard = ({ products, loading }) => {
+    if (loading) return <div className="text-white">Cargando productos...</div>;
+
+    if (products.length === 0) {
+        return <div className="text-on-surface-variant p-10 text-center">No se encontraron productos disponibles.</div>;
+    }
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {products.map((product) => {
+                return (
+                    <div key={product._id} className="bg-surface-container cursor-default rounded-2xl border border-brand-blue/10 shadow-sm overflow-hidden hover:shadow-lg transition-all flex flex-col">
+                        <div className="h-36 bg-surface-container flex items-center justify-center relative">
+                            <span className="material-symbols-outlined text-6xl! pt-5 text-brand-blue/20">
+                                {product.Icon}
+                            </span>
+                            <span className="absolute top-4 left-4 bg-brand-blue/10 text-brand-blue text-sm font-bold uppercase px-2 py-1 rounded tracking-tighter">
+                                {product.Tag}
+                            </span>
+                        </div>
+                        <div className="p-5 flex-1 flex flex-col">
+                            <h3 className="text-on-surface font-bold text-base mb-1">{product.Name}</h3>
+                            <p className="text-sm text-on-surface-variant mb-4 leading-relaxed">{product.Description}</p>
+                            <div className="mt-auto flex items-center justify-between">
+                                <span className="text-on-surface font-black text-base">{product.Price} <span className="text-base font-normal text-on-surface">MXN</span></span>
+                                <button className="p-2 bg-brand-blue text-white rounded-lg hover:scale-110 transition-transform cursor-pointer">
+                                    <span className="material-symbols-outlined text-sm">add_shopping_cart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 const Shop = () => {
     const [esPremium, setEsPremium] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // CATÁLOGO DE HARDWARE OFICIAL KYROS
-    const productos = [
-        { 
-            id: 1, 
-            nombre: "KYROSYS Core v1", 
-            tag: "Puerta de Enlace",
-            precio: "$2,499", 
-            icono: "router", 
-            desc: "Gateway industrial con soporte para 20 nodos y conectividad Wi-Fi Dual Band." 
-        },
-        { 
-            id: 2, 
-            nombre: "Pack Monitoreo Base", 
-            tag: "Esencial",
-            precio: "$3,200", 
-            icono: "package_2", 
-            desc: "1 Core v1 + 2 Sensores de Temperatura/Humedad. Ideal para áreas pequeñas." 
-        },
-        { 
-            id: 3, 
-            nombre: "Pack Monitoreo Premium", 
-            tag: "Popular",
-            precio: "$5,450", 
-            icono: "inventory_2", 
-            desc: "1 Core v1 + 4 Sensores (Temp/Hum/Gas). Incluye kit de montaje en riel DIN." 
-        },
-        { 
-            id: 4, 
-            nombre: "Pack Monitoreo Ultra", 
-            tag: "Industrial",
-            precio: "$8,900", 
-            icono: "deployed_code", 
-            desc: "Sistema completo: Core v1 + 8 Sensores mixtos + Licencia Enterprise por 3 meses." 
-        },
-        { 
-            id: 5, 
-            nombre: "Sensor Gas-Humo", 
-            tag: "Seguridad",
-            precio: "$680", 
-            icono: "detector_smoke", 
-            desc: "Nodo inalámbrico autónomo con sensor MQ-2 para detección de fugas y principios de incendio." 
-        },
-        { 
-            id: 6, 
-            nombre: "Sensor Temperatura-Humedad", 
-            tag: "Ambiente",
-            precio: "$550", 
-            icono: "thermostat", 
-            desc: "Módulo de alta precisión para control climático en racks y líneas de producción." 
-        },
-        { 
-            id: 7, 
-            nombre: "Sensor de Movimiento", 
-            tag: "Intrusión",
-            precio: "$620", 
-            icono: "motion_sensor", 
-            desc: "Sensor PIR de largo alcance para detección de presencia en áreas restringidas." 
-        },
-        { 
-            id: 8, 
-            nombre: "Sensor LDR (Luz)", 
-            tag: "Eficiencia",
-            precio: "$480", 
-            icono: "light_mode", 
-            desc: "Medición de intensidad lumínica para automatización de luminarias industriales." 
-        }
-    ];
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await axios.get('/api/products/products-info', {}, {});
+                setProducts(response.data.products);
+            } catch (error) {
+                console.error("Error fetching products:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
+    }, []);
+
+    const packages = products.filter(product =>
+        product.Type === 'Package'
+    );
+
+    const hardware = products.filter(product =>
+        product.Type !== 'Package'
+    );
 
     return (
         <div className="bg-surface min-h-screen">
             <main className="pt-25 px-6 md:px-12 pb-12 w-full">
-                
-                {/* ENCABEZADO */}
+                {/* Encabezado */}
                 <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h1 className="text-on-surface tracking-[-0.04em] leading-tight">Catálogo de Hardware y Servicios</h1>
@@ -85,62 +79,52 @@ const Shop = () => {
                         </p>
                     </div>
 
-                    <button 
+                    <button
                         onClick={() => setEsPremium(!esPremium)}
-                        className={`px-4 py-2 rounded-full font-bold text-[10px] transition-all border cursor-pointer uppercase tracking-widest ${
-                            esPremium ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-brand-blue/10 text-brand-blue border-brand-blue/30'
-                        }`}
+                        className='px-4 py-2 rounded-full font-bold text-[14px] transition-all border cursor-pointer uppercase tracking-widest bg-brand-blue text-white'
                     >
                         {esPremium ? "Licencia Enterprise" : "Licencia Starter"}
                     </button>
                 </header>
 
-                {/* --- CATÁLOGO DE DISPOSITIVOS --- */}
-                <h2 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">inventory</span>
+                {/* Paquetes */}
+                <h2 className="text-base font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-2xl!">deployed_code</span>
+                    Paquetes de Sensores y Soluciones Integrales
+                </h2>
+
+                <ProductCard 
+                    products={packages}
+                    loading={loading}
+                />
+
+                {/* Módulos */}
+                <h2 className="text-base font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-2xl!">inventory</span>
                     Hardware & Sensores Satélite
                 </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                    {productos.map((prod) => (
-                        <div key={prod.id} className="bg-surface-container rounded-2xl border border-outline-variant/10 overflow-hidden hover:shadow-lg transition-all flex flex-col">
-                            <div className="h-36 bg-surface-container-low flex items-center justify-center relative">
-                                <span className="material-symbols-outlined text-5xl text-brand-blue/20">
-                                    {prod.icono}
-                                </span>
-                                <span className="absolute top-4 left-4 bg-brand-blue/10 text-brand-blue text-[8px] font-black uppercase px-2 py-1 rounded tracking-tighter">
-                                    {prod.tag}
-                                </span>
-                            </div>
-                            <div className="p-5 flex-1 flex flex-col">
-                                <h3 className="text-on-surface font-bold text-sm mb-1">{prod.nombre}</h3>
-                                <p className="text-[11px] text-on-surface-variant mb-4 line-clamp-2 leading-relaxed">{prod.desc}</p>
-                                <div className="mt-auto flex items-center justify-between">
-                                    <span className="text-on-surface font-black text-sm">{prod.precio} <span className="text-[10px] font-normal text-on-surface-variant">MXN</span></span>
-                                    <button className="p-2 bg-brand-blue text-white rounded-lg hover:scale-110 transition-transform cursor-pointer">
-                                        <span className="material-symbols-outlined text-sm">add_shopping_cart</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
 
-                {/* --- PLANES DE SERVICIO --- */}
-                <h2 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">cloud_done</span>
+                <ProductCard 
+                    products={hardware}
+                    loading={loading}
+                />
+
+                {/* Membresía */}
+                <h2 className="text-base font-bold text-on-surface-variant uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-2xl!">cloud_done</span>
                     Planes de Suscripción (SaaS)
                 </h2>
 
                 <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                    <div className="bg-surface-container p-8 rounded-2xl border border-outline-variant/10 flex flex-col justify-between">
+                    <div className="bg-surface-container p-8 rounded-2xl border-2 border-brand-blue relative overflow-hidden flex flex-col justify-between shadow-xl shadow-brand-blue/5">
+                        <div className="absolute top-0 right-0 bg-brand-blue text-white px-4 py-1 text-[9px] font-black uppercase rounded-bl-xl tracking-widest">Starter</div>
                         <div>
                             <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Plan Actual</span>
                             <h2 className="text-3xl font-black text-on-surface mt-2 tracking-tighter">KYROS Starter</h2>
                             <ul className="mt-6 space-y-3 text-xs text-on-surface">
-                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-sm">check_circle</span> Telemetría en vivo</li>
-                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-sm">check_circle</span> 3 Cores Máximo</li>
-                                <li className="flex items-center gap-2 text-on-surface-variant/30"><span className="material-symbols-outlined text-sm">cancel</span> Analítica de Big Data</li>
+                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-base!">check_circle</span> Telemetría en vivo</li>
+                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-base!">check_circle</span> 3 Cores Máximo</li>
+                                <li className="flex items-center gap-2 text-on-surface-variant/30"><span className="material-symbols-outlined text-base!">cancel</span> Analítica de Big Data</li>
                             </ul>
                         </div>
                         <button disabled className="mt-8 w-full py-3 bg-surface-container-low text-on-surface-variant/40 rounded-xl font-bold text-xs border border-outline-variant/10">Licencia en Uso</button>
@@ -151,12 +135,12 @@ const Shop = () => {
                         <div>
                             <h2 className="text-3xl font-black text-on-surface mt-2 tracking-tighter">KYROS Enterprise</h2>
                             <ul className="mt-6 space-y-3 text-xs text-on-surface">
-                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-sm">check_circle</span> Cores Ilimitados</li>
-                                <li className="flex items-center gap-2 font-bold"><span className="material-symbols-outlined text-brand-blue text-sm">psychology</span> Motor Predictivo de Big Data</li>
-                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-sm">check_circle</span> Automatización Autónoma</li>
+                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-base!">check_circle</span> Cores Ilimitados</li>
+                                <li className="flex items-center gap-2 font-bold"><span className="material-symbols-outlined text-brand-blue text-base!">psychology</span> Motor Predictivo de Big Data</li>
+                                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-brand-blue text-base!">check_circle</span> Automatización Autónoma</li>
                             </ul>
                         </div>
-                        <button className="mt-8 w-full py-3 bg-brand-blue text-white rounded-xl font-bold text-xs hover:scale-[1.02] active:scale-95 transition-all cursor-pointer">Actualizar Licencia</button>
+                        <button className="mt-8 w-full py-3 technical-gradient text-white rounded-xl font-bold text-xs hover:scale-[1.02] active:scale-95 transition-all cursor-pointer">Actualizar Licencia</button>
                     </div>
                 </section>
             </main>

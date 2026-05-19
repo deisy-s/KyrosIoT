@@ -10,7 +10,7 @@ export default function Dashboard() {
         { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
         { id: 'w_graph', size: 'col-span-12 lg:col-span-8', type: 'chart', title: 'Rendimiento de Producción', value: '+12% Eficiencia', subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up', color: 'text-brand-blue bg-brand-blue/10' },
-        { id: 'w_core', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'status', title: 'Estado KYROSYS Core v1', value: 'Online', subtitle: 'IP: 192.168.5.105', icon: 'router', color: 'text-brand-blue bg-brand-blue/10' },
+        { id: 'w_core', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'status', title: 'Estado KYROSYS Core v1', value: 'En línea', subtitle: 'IP: 192.168.5.105', icon: 'router', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_gas', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Concentración de Gas', value: '45 ppm', subtitle: 'Sector Almacén • Seguro', icon: 'detector_smoke', color: 'text-yellow-500 bg-yellow-500/10' }
     ];
 
@@ -31,7 +31,7 @@ export default function Dashboard() {
 
         // Intercambio de posiciones (destructuring assignment)
         [nuevosWidgets[index], nuevosWidgets[nuevaPosicion]] = [nuevosWidgets[nuevaPosicion], nuevosWidgets[index]];
-        
+
         setWidgetsActivos(nuevosWidgets);
     };
 
@@ -47,86 +47,75 @@ export default function Dashboard() {
 
     return (
         <div className="bg-surface min-h-screen pb-12">
-            {/* ESTILOS DEL "JIGGLE MODE" */}
-            <style>{`
-                @keyframes phoneWiggle {
-                    0% { transform: rotate(-0.5deg); }
-                    50% { transform: rotate(0.5deg); }
-                    100% { transform: rotate(-0.5deg); }
-                }
-                .jiggle-mode {
-                    animation: phoneWiggle 0.25s infinite ease-in-out;
-                    border: 2px dashed #0056D2 !important;
-                }
-            `}</style>
-
             <main className="pt-25 px-6 md:px-12 w-full">
-                {/* ENCABEZADO */}
+                {/* Encabezado */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
-                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight text-4xl font-bold">Industrial Canvas</h1>
+                        <h1 className="text-on-surface tracking-[-0.04em] leading-tight font-bold">Nombre de la empresa</h1>
                         <p className="text-on-surface-variant text-base mt-2">
-                            Activa el modo personalización para organizar y mover tus paneles de monitoreo.
+                            Personalice su dashboard para visualizar los indicadores clave de rendimiento más relevantes para su planta.
                         </p>
                     </div>
 
                     <div className="flex gap-3">
-                        <button 
+                        {/* Tal vez cambiar color de boton Finalizar */}
+                        <button
                             onClick={() => setIsEditMode(!isEditMode)}
-                            className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${
-                                isEditMode 
-                                ? 'bg-green-500 text-white shadow-green-500/20' 
-                                : 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20 hover:bg-brand-blue hover:text-white'
-                            }`}
+                            className={`px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${isEditMode
+                                ? 'technical-gradient text-white'
+                                : 'technical-gradient text-white'
+                                }`}
                         >
-                            <span className="material-symbols-outlined text-lg">{isEditMode ? 'check_circle' : 'edit_square'}</span>
-                            {isEditMode ? 'Listo' : 'Personalizar'}
+                            <span className="material-symbols-outlined text-base!">{isEditMode ? 'check_circle' : 'edit_square'}</span>
+                            {isEditMode ? 'Finalizar' : 'Personalizar'}
                         </button>
 
                         {isEditMode && (
-                            <button 
+                            <button
                                 onClick={() => setIsLibraryOpen(true)}
-                                className="px-5 py-2.5 bg-brand-blue text-white rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-brand-blue/20 transition-all active:scale-95 cursor-pointer"
+                                className="px-5 py-2.5 technical-gradient text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-brand-blue/20 transition-all active:scale-95 cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-lg">add_box</span>
-                                Añadir Widget
+                                <span className="material-symbols-outlined text-base!">add_circle</span>
+                                Agregar Widget
                             </button>
                         )}
                     </div>
                 </header>
 
-                {/* --- REJILLA DINÁMICA CON REORGANIZACIÓN --- */}
+                {/* Reorganización de widgets */}
                 <div className="grid grid-cols-12 gap-6 items-stretch">
                     {widgetsActivos.map((widget, index) => (
-                        <div 
-                            key={widget.id} 
-                            className={`${widget.size} relative bg-surface-container rounded-2xl p-6 border border-outline-variant/10 shadow-sm transition-all flex flex-col justify-between group ${isEditMode ? 'jiggle-mode shadow-md bg-surface-container-high' : ''}`}
+                        <div
+                            key={widget.id}
+                            className={`${widget.size} relative bg-surface-container rounded-2xl p-6 border border-brand-blue/10 shadow-sm transition-all flex flex-col justify-between group ${isEditMode ? 'jiggle-mode shadow-md bg-surface-container' : ''}`}
                         >
-                            {/* CONTROLES DE MOVIMIENTO Y ELIMINACIÓN (SOLO EN MODO EDICIÓN) */}
+                            {/* Mover y eliminar widgets colocados */}
                             {isEditMode && (
                                 <div className="absolute -top-3 right-2 flex gap-1.5 z-50">
-                                    {/* Mover Izquierda */}
-                                    <button 
+                                    {/* Mover a la izquierda */}
+                                    <button
                                         onClick={() => moverWidget(index, -1)}
                                         disabled={index === 0}
-                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === 0 ? 'bg-surface-container-high text-outline-variant cursor-not-allowed' : 'bg-surface border border-outline-variant/20 text-brand-blue cursor-pointer hover:bg-brand-blue/10 hover:border-brand-blue/30 active:scale-90'}`}
+                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === 0 ? 'bg-on-surface-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-surface border border-brand-blue text-brand-blue cursor-pointer hover:bg-light-bg-variant hover:border-brand-blue/60 active:scale-95'}`}
                                         title="Mover a la izquierda"
                                     >
                                         <span className="material-symbols-outlined text-[16px] font-bold">arrow_back</span>
                                     </button>
-                                    {/* Mover Derecha */}
-                                    <button 
+
+                                    {/* Mover a la derecha */}
+                                    <button
                                         onClick={() => moverWidget(index, 1)}
                                         disabled={index === widgetsActivos.length - 1}
-                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === widgetsActivos.length - 1 ? 'bg-surface-container-high text-outline-variant cursor-not-allowed' : 'bg-surface border border-outline-variant/20 text-brand-blue cursor-pointer hover:bg-brand-blue/10 hover:border-brand-blue/30 active:scale-90'}`}
+                                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all ${index === widgetsActivos.length - 1 ? 'bg-on-surface-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-surface border border-brand-blue text-brand-blue cursor-pointer hover:bg-light-bg-variant hover:border-brand-blue/60 active:scale-95'}`}
                                         title="Mover a la derecha"
                                     >
                                         <span className="material-symbols-outlined text-[16px] font-bold">arrow_forward</span>
                                     </button>
-                                    {/* Eliminar (reposicionado ligeramente) */}
-                                    <button 
+
+                                    {/* Eliminar widget */}
+                                    <button
                                         onClick={() => eliminarWidget(widget.id)}
-                                        className="w-7 h-7 bg-error text-white rounded-full flex items-center justify-center shadow-md cursor-pointer hover:scale-110 active:scale-90 transition-transform ml-1"
+                                        className="w-7 h-7 bg-error text-white rounded-full flex items-center justify-center shadow-md cursor-pointer hover:scale-110 active:scale-95 transition-transform ml-1"
                                         title="Eliminar widget"
                                     >
                                         <span className="material-symbols-outlined text-xs font-black">close</span>
@@ -143,24 +132,24 @@ export default function Dashboard() {
                                         <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{widget.subtitle}</span>
                                     </div>
                                 </div>
-                                <h3 className="text-on-surface font-bold text-base tracking-tight mb-1">{widget.title}</h3>
+                                <h3 className="text-on-surface font-bold tracking-tight mb-1">{widget.title}</h3>
                             </div>
 
                             <div className="mt-4 grow flex items-center">
                                 {widget.type === 'metric' && (
-                                    <span className="text-4xl font-black text-on-surface tracking-tighter">{widget.value}</span>
+                                    <span className="text-4xl! font-black text-on-surface tracking-tighter">{widget.value}</span>
                                 )}
                                 {widget.type === 'status' && (
-                                    <span className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                    <span className="px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse"></span>
                                         {widget.value}
                                     </span>
                                 )}
                                 {widget.type === 'gauge' && (
                                     <div className="flex items-center gap-4 w-full">
                                         <span className="text-4xl font-black text-on-surface tracking-tighter">{widget.value}</span>
-                                        <div className="grow bg-surface h-2 rounded-full overflow-hidden border border-outline-variant/10">
-                                            <div className="bg-green-500 h-full w-[75%] rounded-full"></div>
+                                        <div className="grow bg-surface h-2 rounded-full overflow-hidden border border-on-surface-variant">
+                                            <div className="bg-brand-blue h-full w-[75%] rounded-full"></div>
                                         </div>
                                     </div>
                                 )}
@@ -182,52 +171,65 @@ export default function Dashboard() {
                         </div>
                     ))}
 
-                    {/* BOTÓN SLOT VACÍO */}
+                    {/* Slot vacío para agregar widget */}
                     {isEditMode && (
-                        <div 
-                            onClick={() => setIsLibraryOpen(true)}
-                            className="col-span-12 md:col-span-6 lg:col-span-4 rounded-2xl border-2 border-dashed border-outline-variant/30 hover:border-brand-blue/50 flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-colors min-h-[160px]"
-                        >
-                            <span className="material-symbols-outlined text-outline-variant text-3xl mb-2">add_circle</span>
-                            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Añadir Espacio</p>
-                        </div>
+                        <section className="col-span-12 lg:col-span-4 h-full">
+                            <button onClick={() => setIsLibraryOpen(true)}
+                                className="w-full h-full min-h-70 border-2 border-dashed border-main-border rounded-xl flex flex-col items-center justify-center gap-4 group hover:border-main-border/70 hover:bg-on-surface-variant/7 cursor-pointer transition-all">
+                                <div className="w-14 h-14 rounded-full flex items-center justify-center transition-all">
+                                    <span className="material-symbols-outlined text-brand-blue text-4xl!">add_circle</span>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-on-surface">Agregar Widget</p>
+                                    <p className="text-xs text-on-surface-variant">Personaliza tu dashboard</p>
+                                </div>
+                            </button>
+                        </section>
                     )}
                 </div>
 
-                {/* --- LIBRERÍA DE WIDGETS --- */}
+                {/* Librería de Widgets */}
                 {isLibraryOpen && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-md" onClick={() => setIsLibraryOpen(false)} />
-                        <div className="bg-surface-container border border-outline-variant/10 rounded-2xl w-full max-w-xl max-h-[80vh] overflow-y-auto p-6 z-10 shadow-2xl relative">
+
+                        <div className="bg-surface-container border border-main-border/80 rounded-2xl w-full max-w-xl max-h-[80vh] overflow-y-auto p-6 z-10 shadow-2xl relative">
+                            {/* Mostrar el apartado de biblioteca de widgets */}
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-on-surface tracking-tight">Biblioteca de KYROS Widgets</h2>
-                                <button onClick={() => setIsLibraryOpen(false)} className="w-8 h-8 rounded-full bg-surface flex items-center justify-center cursor-pointer hover:bg-zinc-400/10 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-xl! font-bold text-on-surface tracking-tight">Biblioteca de Widgets</h2>
+                                    <span class="w-1 h-1 rounded-full bg-on-surface"></span>
+                                    <h2 className="text-xl! font-bold text-on-surface tracking-tight">KYROSYS</h2>
+                                </div>
+
+                                <button onClick={() => setIsLibraryOpen(false)} className="w-8 h-8 rounded-full bg-surface flex items-center justify-center cursor-pointer hover:bg-on-surface-variant/12 active:scale-95 transition-colors">
                                     <span className="material-symbols-outlined text-sm">close</span>
                                 </button>
                             </div>
-                            
+
+                            {/* Mostrar los widgets disponibles para agregar */}
                             <div className="space-y-3">
                                 {bibliotecaWidgets.filter(w => !widgetsActivos.find(a => a.id === w.id)).map((widget) => (
-                                    <div key={widget.id} className="bg-surface p-4 rounded-xl border border-outline-variant/10 flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-4">
+                                    <div key={widget.id} className="bg-surface p-4 rounded-xl border border-main-border/50 flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4 cursor-default">
                                             <div className={`w-10 h-10 rounded-xl ${widget.color} flex items-center justify-center shrink-0`}>
-                                                <span className="material-symbols-outlined">{widget.icon}</span>
+                                                <span className="material-symbols-outlined text-xl!">{widget.icon}</span>
                                             </div>
                                             <div>
                                                 <h4 className="font-bold text-sm text-on-surface">{widget.title}</h4>
                                                 <p className="text-xs text-on-surface-variant">{widget.subtitle}</p>
                                             </div>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => { agregarWidget(widget); setIsLibraryOpen(false); }}
-                                            className="px-4 py-2 bg-brand-blue text-white rounded-lg text-xs font-bold cursor-pointer transition-transform active:scale-95 whitespace-nowrap"
+                                            className="px-4 py-2 technical-gradient text-white rounded-lg text-xs font-bold cursor-pointer shadow-lg shadow-brand-blue/20 active:scale-95 transition-all whitespace-nowrap"
                                         >
-                                            Instalar
+                                            Agregar
                                         </button>
                                     </div>
                                 ))}
                                 {bibliotecaWidgets.filter(w => !widgetsActivos.find(a => a.id === w.id)).length === 0 && (
-                                    <p className="text-sm text-on-surface-variant text-center py-6">Todos los widgets disponibles ya están en tu dashboard.</p>
+                                    <p className="text-sm text-on-surface-variant text-center py-6">Todos los widgets ya se encuentran en el dashboard.</p>
                                 )}
                             </div>
                         </div>

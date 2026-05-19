@@ -40,7 +40,6 @@ const ProductCard = ({ products, loading }) => {
 }
 
 const Shop = () => {
-    const [esPremium, setEsPremium] = useState(false);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -83,12 +82,9 @@ const Shop = () => {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setEsPremium(!esPremium)}
-                        className='px-4 py-2 rounded-full font-bold text-[14px] transition-all border cursor-pointer uppercase tracking-widest bg-brand-blue text-white'
-                    >
-                        {esPremium ? "Licencia Enterprise" : "Licencia Starter"}
-                    </button>
+                    <span className='px-4 py-2 rounded-full font-bold text-[14px] border uppercase tracking-widest bg-brand-blue text-white'>
+                        Licencia Starter
+                    </span>
                 </header>
 
                 {/* Paquetes */}

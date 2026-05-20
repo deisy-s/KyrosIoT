@@ -74,7 +74,7 @@ const SignIn = () => {
 
                             <form className="space-y-6" onSubmit={handleSubmit}>
                                 <div className="space-y-2">
-                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="operator-id">Usuario / Correo electrónico</label>
+                                    <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="operator-id">Usuario / Correo electrónico</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
                                             <span className="material-symbols-outlined text-[20px]!">account_circle</span>
@@ -91,7 +91,7 @@ const SignIn = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" for="security-key">Contraseña</label>
+                                        <label className="block font-label text-label-sm font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="security-key">Contraseña</label>
                                     </div>
 
                                     <div className="relative group">

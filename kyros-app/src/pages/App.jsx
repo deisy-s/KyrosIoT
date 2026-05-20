@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import kyrosLogo from '../assets/kyrosLogo.jpeg'
-import { Routes, Route, Link, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, NavLink, Navigate, useLocation } from 'react-router-dom';
 import io from 'socket.io-client';
 import axios from 'axios';
 import SignIn from './SignIn.jsx';
@@ -78,6 +78,8 @@ const App = () => {
     };
 
     useEffect(() => {
+        if (!isLoggedIn) return;
+
         loadNotifs();
 
         const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -100,6 +102,8 @@ const App = () => {
     }, []);
 
     useEffect(() => {
+        if (!isLoggedIn) return;
+
         loadNotifs();
         const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
@@ -318,6 +322,7 @@ const App = () => {
                     <Route path="/signin" element={<SignIn />} />
                     <Route path="/signup" element={<SignUp />} />
                     <Route path="/automation" element={<Automation />} />
+                    <Route path="/" element={<Navigate to={isLoggedIn ? "/dashboard" : "/signin"} replace />} />
 
                 </Routes>
             </div>

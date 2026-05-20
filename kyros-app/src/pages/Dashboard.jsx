@@ -13,7 +13,7 @@ export default function Dashboard() {
         const fetchUser = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get(API_BASE + '/api/auth/get-user', {}, {
+                const response = await axios.get(API_BASE + '/api/auth/get-user', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

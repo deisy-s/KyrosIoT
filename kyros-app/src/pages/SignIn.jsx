@@ -41,6 +41,7 @@ const SignIn = () => {
                     confirmButtonColor: '#003f87',
                 })
                 localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('token', data.token);
                 navigate('/dashboard');
             } else {
                 withReactContent(Swal).fire({

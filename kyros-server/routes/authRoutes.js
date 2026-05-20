@@ -56,7 +56,7 @@ router.post('/signin', async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 
         });
 
-        res.status(200).json({ message: "Sign in successful!", user: { email: user.Email, companyName: user.CompanyName, companyID: user.CompanyID } });
+        res.status(200).json({ message: "Sign in successful!", token, user: { email: user.Email, companyName: user.CompanyName, companyID: user.CompanyID } });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

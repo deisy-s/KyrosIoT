@@ -55,7 +55,7 @@ const Automation = () => {
         <div className="bg-surface min-h-screen">
             <main className="pt-25 px-6 md:px-12 pb-12 w-full">
                 <header className="mb-10">
-                    <h1 className="text-on-surface tracking-[-0.04em] leading-tight">Centro de Control</h1>
+                    <h1 className="text-on-surface tracking-[-0.04em] leading-tight">Centro de Control de Automatizaciones</h1>
                     <p className="text-on-surface-variant text-base max-w-xl mt-2 mb-8">
                         Gestiona los actuadores físicos y define reglas de comportamiento autónomo para la planta.
                     </p>

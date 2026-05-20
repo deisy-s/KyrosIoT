@@ -14,7 +14,7 @@ const ModuleInfo = () => {
     const module = location.state?.module; // Obtener la información del módulo desde el estado de navegación
 
     // Configuración visual de la gráfica industrial
-    const [chartOptions, setChartOptions] = useState({
+    const [baseChartOptions, setChartOptions] = useState({
         chart: {
             id: 'realtime-kyros',
             type: 'area',
@@ -67,6 +67,62 @@ const ModuleInfo = () => {
         legend: { position: 'top', horizontalAlign: 'right' }
     });
 
+    const tempChartOptions = {
+        ...baseChartOptions,
+        colors: ['#003f87'], 
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.05,
+                stops: [0, 90, 100]
+            }
+        },
+        yaxis: {
+            ...baseChartOptions.yaxis,
+            labels: {
+                ...baseChartOptions.yaxis.labels,
+                formatter: (val) => `${val.toFixed(1)} °C` 
+            }
+        }
+    };
+
+    const humChartOptions = {
+        ...baseChartOptions,
+        colors: ['#06B6D4'], 
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.05,
+                stops: [0, 90, 100]
+            }
+        },
+        yaxis: {
+            ...baseChartOptions.yaxis,
+            labels: {
+                ...baseChartOptions.yaxis.labels,
+                formatter: (val) => `${val.toFixed(0)} %` 
+            }
+        }
+    };
+
+    const generalChartOptions = {
+        ...baseChartOptions,
+        colors: ['#003f87'], 
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.3,
+                opacityTo: 0.0,
+                stops: [0, 100]
+            }
+        }
+    };
+
     // Datos simulados
     // const [chartSeries] = useState([
     //     { name: 'Temperatura (°C)', data: [22, 24, 28, 35, 32, 29, 26] },
@@ -83,17 +139,6 @@ const ModuleInfo = () => {
         .filter(l => l.tipo === "humedad")
         .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }));
 
-    // const chartSeries = [
-    //     {
-    //         name: 'Temperatura (°C)',
-    //         data: datosTemperatura
-    //     },
-    //     {
-    //         name: 'Humedad Relativa (%)',
-    //         data: datosHumedad
-    //     }
-    // ];
-
     // 1. Declaramos la variable que contendrá las series finales de la gráfica
     let chartSeries = [];
 
@@ -101,15 +146,22 @@ const ModuleInfo = () => {
     // (Asegúrate de usar la propiedad exacta de tu objeto de módulo, por ejemplo: module?.Type o module?.tipo)
     const tipoModulo = module?.Type || module?.tipo;
 
+    // Leyendas y series de cada tipo de módulo
+    let tempSeries = [];
+    let humSeries = [];
+    let generalSeries = [];
+
     switch (tipoModulo) {
         case "Temperatura y Humedad":
-            chartSeries = [
+            tempSeries = [
                 {
                     name: 'Temperatura (°C)',
                     data: lecturasRaw
                         .filter(l => l.tipo === "temperatura")
                         .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
-                },
+                }
+            ];
+            humSeries = [
                 {
                     name: 'Humedad Relativa (%)',
                     data: lecturasRaw
@@ -120,7 +172,7 @@ const ModuleInfo = () => {
             break;
 
         case "Humo y Gas":
-            chartSeries = [
+            generalSeries = [
                 {
                     name: 'Presencia de Humo/Gas (ppm)',
                     data: lecturasRaw
@@ -131,7 +183,7 @@ const ModuleInfo = () => {
             break;
 
         case "Movimiento":
-            chartSeries = [
+            generalSeries = [
                 {
                     name: 'Detección de Movimiento (Estado)',
                     data: lecturasRaw
@@ -142,7 +194,7 @@ const ModuleInfo = () => {
             break;
 
         default:
-            chartSeries = [
+            generalSeries = [
                 {
                     name: 'Métrica General',
                     data: lecturasRaw.map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
@@ -246,12 +298,32 @@ const ModuleInfo = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* TARJETA DE LA GRÁFICA GIGANTE */}
-                <div className="lg:col-span-2 bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm">
-                    <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Histórico de Telemetría</h2>
-                    <div className="w-full h-87.5">
-                        <Chart options={chartOptions} series={chartSeries} type="area" height="100%" />
+                {tipoModulo === "Temperatura y Humedad" ? (
+                    <div className="lg:col-span-2 bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm">
+                        {/* Gráfico de Temperatura */}
+                        <div className="bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm">
+                            <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Histórico de Temperatura</h2>
+                            <div className="w-full h-87.5">
+                                <Chart options={tempChartOptions} series={tempSeries} type="area" height="100%" />
+                            </div>
+                        </div>
+
+                        {/* Gráfico de Humedad */}
+                        <div className="bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm mt-5">
+                            <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Histórico de Humedad Relativa</h2>
+                            <div className="w-full h-87.5">
+                                <Chart options={humChartOptions} series={humSeries} type="area" height="100%" />
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="lg:col-span-2 bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm">
+                        <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Histórico de Telemetría</h2>
+                        <div className="w-full h-87.5">
+                            <Chart options={generalChartOptions} series={generalSeries} type="area" height="100%" />
+                        </div>
+                    </div>
+                )}
 
                 {/* PANEL LATERAL DE MÉTRICAS ACTUALES */}
                 <div className="flex flex-col gap-6">

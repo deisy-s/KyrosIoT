@@ -86,7 +86,18 @@ router.post('/telemetria', async (req, res) => {
                 }
             );
 
-            return res.status(200).send({ mensaje: "Métricas compuestas procesadas e indexadas" });
+            if(temp > 35){
+                await notifsModel.create({
+                    DeviceID: mac_origen,
+                    DeviceType: 'sensor',
+                    Message: `Alerta: Temperatura alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${temp}°C.`,
+                    Type: 'critico',
+                    CompanyID: moduloAsociado.CompanyID,
+                    Solved: false
+                })
+            }
+
+            console.log(`[TELEMETRÍA] ${tipo} = ${valor} (MAC: ${mac_origen})`);
         } else {
 
             const nuevaLectura = new moduleDataModel({
@@ -123,9 +134,36 @@ router.post('/telemetria', async (req, res) => {
         }
 
         latidosSensores[mac_origen] = Date.now();
-        await moduleModel.findOneAndUpdate({ MAC: mac_origen }, { IsActive: true });
+        const prevStatus = moduloAsociado?.Status;
+        const modRes = await moduleModel.findOneAndUpdate({ MAC: mac_origen }, { Status: "active" });
 
-        await notifsModel.updateMany({ DeviceID: mac_origen, IsResolved: false }, { IsResolved: true });
+        if(!modRes){
+            return res.status(404).json({ error : "Module no actualizado "});
+        }
+
+        const sectorUpdate = await sectorModel.findOneAndUpdate(
+            { SectorID: moduloAsociado.SectorID },
+            { Status: 'active' }
+        );
+
+        if (!sectorUpdate) {
+            console.warn(`[WARNING] No se encontró el SectorID ${moduloAsociado.SectorID} para pasar a activo.`);
+        }
+
+        await notifsModel.updateMany({ DeviceID: mac_origen, Solved: false }, { Solved: true });
+
+        await notifsModel.updateMany(
+            { DeviceID: mac_origen, Solved: false }, 
+            { $set: { Solved: true } }
+        );
+
+        if (io && prevStatus !== "active") {
+            io.emit('modulo-estado-cambio', { 
+                mac: mac_origen, 
+                isActive: true, 
+                sectorId: moduloAsociado.SectorID 
+            });
+        }
 
         res.status(200).send({ mensaje: "Guardado en DB exitosamente" });
     } catch (error) {
@@ -280,7 +318,7 @@ router.post('/ping', async (req, res) => {
 
         // Si el sector estaba marcado como "Desconectado", lo regresamos a "Activo" (Auto-Recuperación)
         const sectorActualizado = await sectorModel.findOneAndUpdate(
-            { SectorID: sectorId, Status: 'Desconectado' },
+            { SectorID: sectorId, Status: 'inactive' },
             { Status: 'active' }
         );
 
@@ -292,7 +330,8 @@ router.post('/ping', async (req, res) => {
             const io = req.app.get('socketio');
             io.emit('sector-estado-cambio', { sectorId, status: 'active' });
             
-            await Alert.updateMany({ DeviceID: sectorId, IsResolved: false }, { IsResolved: true });
+            const upNoti = await notifsModel.updateMany({ DeviceID: sectorId, Solved: false }, { Solved: true });
+            console.log(`[NOTIFICATIONS] Notificaciones actualizadas para el sector: ${sectorId}`);
         }
 
         res.status(200).send({ status: "alive" });
@@ -389,6 +428,32 @@ setInterval(async () => {
                 });
             }
         }
+
+        // checar lógica para sensores inactivos al volver a conectarse
+        // const sensoresInactivos = await moduleModel.find({ Status: "inactive" });
+
+        // for (let sensor of sensoresInactivos) {
+        //     const ultimoLatidoSensor = latidosSensores[sensor.MAC];
+
+        //     // Si el sensor pasó más de 30 segundos sin mandar telemetría...
+        //     if (!ultimoLatidoSensor || (tiempoActual - ultimoLatidoSensor <= tiempoLimite)) {
+        //         console.log(`[ALERTA IOT] Satélite conectado de nuevo -> MAC: ${sensor.MAC} ${sensor.Name} [${sensor.Type}]`);
+
+        //         sensor.Status = "active";
+        //         await sensor.save();
+
+        //         const coreUpdate = await sectorModel.findOneAndUpdate(
+        //             { SectorID: sensor.SectorID },
+        //             { Status: 'active' }
+        //         )
+
+        //         if (io) io.emit('modulo-estado-cambio', {
+        //             mac: sensor.MAC,
+        //             status: 'active',
+        //             sectorId: sensor.SectorID
+        //         });
+        //     }
+        // }
     } catch (err) {
         console.error("Error en Watchdog de Sensores:", err);
     }

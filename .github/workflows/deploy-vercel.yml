@@ -1,0 +1,24 @@
+name: Deploy to Vercel Production
+
+on:
+  push:
+    branches: [monitor]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --global vercel
+
+      - name: Deploy to production
+        run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: kyros-app
+        env:
+          VERCEL_ORG_ID: team_CAJvIQaSVQ7G5SczDUhmsBxU
+          VERCEL_PROJECT_ID: prj_zSQlwW0PJqfFq7VZNf3OnI6fZLOK

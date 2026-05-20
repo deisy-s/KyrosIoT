@@ -86,20 +86,75 @@ router.post('/telemetria', async (req, res) => {
                 }
             );
 
-            if(temp > 35){
-                await notifsModel.create({
-                    DeviceID: mac_origen,
-                    DeviceType: 'sensor',
-                    Message: `Alerta: Temperatura alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${temp}°C.`,
-                    Type: 'critico',
-                    CompanyID: moduloAsociado.CompanyID,
-                    Solved: false
-                })
+            if (temp > 35) {
+                // const tNotif = await notifsMode.findOneAndUpdate(
+                //     { DeviceID: mac_origen, Type: 'critico', CompanyID: moduloAsociado.CompanyID, Solved: false },
+                //     {
+                //         $set: {
+                //             Message: `Alerta: Temperatura alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${temp}°C.`,
+                //             Timestamp: timestampActual,
+                //             DeviceType: 'sensor'
+                //         }
+                //     },
+                //     {
+                //         upsert: true, // crear doc si no existe
+                //         new: true,    
+                //         setDefaultsOnInsert: true
+                //     }
+                // );
+
+                // if (!tNotif) {
+                //     return res.status(500).json({ error: "Error al crear notificación de temperatura alta" });
+                // }
+
+                const alertaExistente = await notifsModel.findOne({ DeviceID: mac_origen, CompanyID: moduloAsociado.CompanyID, Solved: false });
+                if (!alertaExistente) {
+                    await notifsModel.create({
+                        DeviceID: mac_origen,
+                        DeviceType: 'sensor',
+                        Message: `Alerta: Temperatura alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${temp}°C.`,
+                        Type: 'critico',
+                        CompanyID: moduloAsociado.CompanyID,
+                        Solved: false
+                    });
+                }
+
             }
+
+            if (hum > 70) {
+                // const hNotif = await notifsModel.findOneAndUpdate(
+                //     { DeviceID: mac_origen, Type: 'critico', CompanyID: moduloAsociado.CompanyID, Solved: false },
+                //     {
+                //         $set: {
+                //             Message: `Alerta: Humedad alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${hum}%.`,
+                //             Timestamp: timestampActual,
+                //             DeviceType: 'sensor'
+                //         }
+                //     },
+                //     {
+                //         upsert: true, // crear doc si no existe
+                //         new: true,    
+                //         setDefaultsOnInsert: true
+                //     }
+                // );
+                // if (!hNotif) {
+                //     return res.status(500).json({ error: "Error al crear notificación de humedad alta" });
+                // }
+                const alertaExistente = await notifsModel.findOne({ DeviceID: mac_origen, CompanyID: moduloAsociado.CompanyID, Solved: false });
+                if (!alertaExistente) {
+                    await notifsModel.create({
+                        DeviceID: mac_origen,
+                        DeviceType: 'sensor',
+                        Message: `Alerta: Humedad alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${hum}%.`,
+                        Type: 'critico',
+                        CompanyID: moduloAsociado.CompanyID,
+                        Solved: false
+                    });
+                }
+            } 
 
             console.log(`[TELEMETRÍA] ${tipo} = ${valor} (MAC: ${mac_origen})`);
         } else {
-
             const nuevaLectura = new moduleDataModel({
                 MAC: mac_origen,
                 Type: tipo,
@@ -137,8 +192,8 @@ router.post('/telemetria', async (req, res) => {
         const prevStatus = moduloAsociado?.Status;
         const modRes = await moduleModel.findOneAndUpdate({ MAC: mac_origen }, { Status: "active" });
 
-        if(!modRes){
-            return res.status(404).json({ error : "Module no actualizado "});
+        if (!modRes) {
+            return res.status(404).json({ error: "Module no actualizado " });
         }
 
         const sectorUpdate = await sectorModel.findOneAndUpdate(
@@ -153,15 +208,15 @@ router.post('/telemetria', async (req, res) => {
         await notifsModel.updateMany({ DeviceID: mac_origen, Solved: false }, { Solved: true });
 
         await notifsModel.updateMany(
-            { DeviceID: mac_origen, Solved: false }, 
+            { DeviceID: mac_origen, Solved: false },
             { $set: { Solved: true } }
         );
 
         if (io && prevStatus !== "active") {
-            io.emit('modulo-estado-cambio', { 
-                mac: mac_origen, 
-                isActive: true, 
-                sectorId: moduloAsociado.SectorID 
+            io.emit('modulo-estado-cambio', {
+                mac: mac_origen,
+                isActive: true,
+                sectorId: moduloAsociado.SectorID
             });
         }
 
@@ -329,7 +384,7 @@ router.post('/ping', async (req, res) => {
         if (sectorActualizado) {
             const io = req.app.get('socketio');
             io.emit('sector-estado-cambio', { sectorId, status: 'active' });
-            
+
             const upNoti = await notifsModel.updateMany({ DeviceID: sectorId, Solved: false }, { Solved: true });
             console.log(`[NOTIFICATIONS] Notificaciones actualizadas para el sector: ${sectorId}`);
         }

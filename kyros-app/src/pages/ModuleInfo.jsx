@@ -224,7 +224,7 @@ const ModuleInfo = () => {
         if (!module.MAC) return;
 
         // Conectar al WebSocket apuntando a tu puerto del backend
-        const socket = io('http://localhost:5000');
+        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
         socket.on(`telemetria-${module.MAC}`, (nuevaLectura) => {
             setLecturasRaw((prevLecturas) => {

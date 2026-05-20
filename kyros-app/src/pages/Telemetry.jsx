@@ -5,6 +5,7 @@ import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import io from 'socket.io-client';
 import '../App.css'
+import API_BASE from '../lib/api.js';
 
 const SectorCards = ({ sectors, loading, handleEditClick, btnDelClick, handleDivClick }) => {
     if (loading) return <div className="text-white">Cargando sectores...</div>;
@@ -84,7 +85,7 @@ const Telemetry = () => {
         const fetchSectors = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.post('/api/sectors/sectors-info', {}, {
+                const response = await axios.post(API_BASE + '/api/sectors/sectors-info', {}, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -106,7 +107,7 @@ const Telemetry = () => {
             try {
                 const token = localStorage.getItem('token');
 
-                const res = await fetch('/api/iot/sensores/pendientes?_t=${Date.now()}', {
+                const res = await fetch(`${API_BASE}/api/iot/sensores/pendientes?_t=${Date.now()}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -138,7 +139,7 @@ const Telemetry = () => {
         try {
             const token = localStorage.getItem('token');
             const targetSectorId = nodoDescubierto.detectadoPor;
-            const res = await fetch('/api/iot/sensores/registrar', {
+            const res = await fetch(API_BASE + '/api/iot/sensores/registrar', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,7 +209,7 @@ const Telemetry = () => {
             preConfirm: async (inputPin) => {
                 try {
                     const token = localStorage.getItem('token');
-                    const response = await fetch('/api/auth/admin-verify', {
+                    const response = await fetch(API_BASE + '/api/auth/admin-verify', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -250,7 +251,7 @@ const Telemetry = () => {
         handleAdminAction(async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`/api/sectors/delete/${sectorId}`, {
+                const response = await fetch(`${API_BASE}/api/sectors/delete/${sectorId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -283,7 +284,7 @@ const Telemetry = () => {
     };
 
     useEffect(() => {
-        const socket = io('http://localhost:5000');
+        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
         // Escucha fallas en los módulos satélites
         socket.on('modulo-estado-cambio', (data) => {

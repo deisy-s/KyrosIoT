@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
+import API_BASE from '../lib/api.js';
 
 const SignIn = () => {
     const navigate = useNavigate();
@@ -22,7 +23,7 @@ const SignIn = () => {
         e.preventDefault();
 
         try {
-            const response = await fetch(`/api/auth/signin`, {
+            const response = await fetch(`${API_BASE}/api/auth/signin`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

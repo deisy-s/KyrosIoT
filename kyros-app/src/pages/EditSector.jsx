@@ -4,6 +4,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import '../App.css'
+import API_BASE from '../lib/api.js';
 
 const ModuleCards = ({ modules, loading, btnDelClick }) => {
     if (loading) return <div className="text-white">Cargando módulos...</div>;
@@ -103,7 +104,7 @@ const EditSector = () => {
         const fetchModules = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.post('/api/modules/modules-info', {
+                const response = await axios.post(API_BASE + '/api/modules/modules-info', {
                     SectorID: sector.SectorID // Enviar el ID del sector para obtener solo sus módulos vinculados
                 }, {
                     headers: {
@@ -137,7 +138,7 @@ const EditSector = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/sectors/edit/${sector._id}`, {
+            const response = await fetch(`${API_BASE}/api/sectors/edit/${sector._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -194,7 +195,7 @@ const EditSector = () => {
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     const token = localStorage.getItem('token');
-                    const response = await fetch(`/api/modules/delete/${moduleID}`, {
+                    const response = await fetch(`${API_BASE}/api/modules/delete/${moduleID}`, {
                         method: 'DELETE',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -205,7 +206,7 @@ const EditSector = () => {
                         throw new Error('Error al eliminar el módulo en el servidor');
                     }
 
-                    const response1 = await fetch(`/api/sectors/update-devices/${sector._id}`, {
+                    const response1 = await fetch(`${API_BASE}/api/sectors/update-devices/${sector._id}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',

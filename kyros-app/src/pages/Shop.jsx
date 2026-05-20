@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../App.css';
+import API_BASE from '../lib/api.js';
 
 const ProductCard = ({ products, loading }) => {
     if (loading) return <div className="text-white">Cargando productos...</div>;
@@ -47,7 +48,7 @@ const Shop = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get('/api/products/products-info', {}, {});
+                const response = await axios.get(API_BASE + '/api/products/products-info', {}, {});
                 setProducts(response.data.products);
             } catch (error) {
                 console.error("Error fetching products:", error);

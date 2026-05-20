@@ -4,6 +4,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import '../App.css'
+import API_BASE from '../lib/api.js';
 
 const ModuleCards = ({ modules, loading, handleModuleClick }) => {
     if (loading) return <div className="text-white">Cargando módulos...</div>;
@@ -64,7 +65,7 @@ const Modules = () => {
         const fetchModules = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.post('/api/modules/modules-info', {
+                const response = await axios.post(API_BASE + '/api/modules/modules-info', {
                     SectorID: sector.SectorID // Enviar el ID del sector para obtener solo sus módulos vinculados
                 }, {
                     headers: {

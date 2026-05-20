@@ -6,6 +6,7 @@ import withReactContent from 'sweetalert2-react-content';
 import io from 'socket.io-client';
 import Chart from 'react-apexcharts';
 import '../App.css'
+import API_BASE from '../lib/api.js';
 
 const ModuleInfo = () => {
     const navigate = useNavigate();
@@ -206,7 +207,7 @@ const ModuleInfo = () => {
     useEffect(() => {
         const cargarHistorial = async () => {
             try {
-                const res = await fetch(`/api/iot/telemetria/${module.MAC}`);
+                const res = await fetch(`${API_BASE}/api/iot/telemetria/${module.MAC}`);
                 if (res.ok) {
                     const data = await res.json();
                     setLecturasRaw(data);

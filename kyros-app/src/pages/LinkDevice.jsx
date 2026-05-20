@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import '../App.css';
+import API_BASE from '../lib/api.js';
 
 const MySwal = withReactContent(Swal);
 
@@ -20,7 +21,7 @@ export default function LinkDevice() {
             const token = localStorage.getItem('token');
 
             // Crear un sector nuevo
-            const res = await fetch('/api/sectors/link', {
+            const res = await fetch(API_BASE + '/api/sectors/link', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

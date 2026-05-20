@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../App.css';
+import API_BASE from '../lib/api.js';
 
 export default function Dashboard() {
     const [isEditMode, setIsEditMode] = useState(false);
@@ -12,7 +13,7 @@ export default function Dashboard() {
         const fetchUser = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get('/api/auth/get-user', {}, {
+                const response = await axios.get(API_BASE + '/api/auth/get-user', {}, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

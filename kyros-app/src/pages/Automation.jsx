@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import '../App.css';
+import API_BASE from '../lib/api.js';
 
 const Automation = () => {
     const [activeTab, setActiveTab] = useState('rules'); // 'manual' o 'rules'
@@ -11,7 +12,7 @@ const Automation = () => {
         const nuevoEstado = !reles[id];
         setReles({ ...reles, [id]: nuevoEstado });
         try {
-            await fetch('/api/iot/control', {
+            await fetch(API_BASE + '/api/iot/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rele: id, estado: nuevoEstado })

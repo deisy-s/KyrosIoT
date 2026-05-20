@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import '../App.css'
+import API_BASE from '../lib/api.js';
 
 const SignUp = () => {
     const navigate = useNavigate();
@@ -47,7 +48,7 @@ const SignUp = () => {
         }
 
         try {
-            const response = await fetch('/api/auth/signup', {
+            const response = await fetch(API_BASE + '/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

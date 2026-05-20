@@ -43,13 +43,23 @@ async function dbGet(table: string, params: Record<string, string>) {
 export default async (req: Request) => {
   try {
     const payload = await req.json()
-    const { mac_origen, tipo, valor, company_id } = payload
+    const { mac_origen, tipo, valor, sectorId } = payload
+    let { company_id } = payload
 
     if (!mac_origen || !tipo || valor === undefined) {
       return new Response(JSON.stringify({ error: 'mac_origen, tipo y valor son requeridos' }), {
         headers: { 'Content-Type': 'application/json' },
         status: 400,
       })
+    }
+
+    // Resolver company_id desde sectorId si no viene directo
+    if (!company_id && sectorId) {
+      const sectors = await dbGet('sectors', {
+        sector_id: `eq.${sectorId}`,
+        select: 'company_id',
+      })
+      company_id = Array.isArray(sectors) && sectors.length > 0 ? sectors[0].company_id : null
     }
 
     // 1. Insertar telemetría

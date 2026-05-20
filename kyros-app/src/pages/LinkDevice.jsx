@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { insforge } from '../lib/insforge';
 import '../App.css';
 
 const MySwal = withReactContent(Swal);
@@ -17,33 +18,31 @@ export default function LinkDevice() {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
+            const rawUser = localStorage.getItem('user');
+            if (!rawUser) throw new Error('Sesión no encontrada. Por favor, inicie sesión.');
+            const user = JSON.parse(rawUser);
+            const companyId = user.companyId ?? user.id;
 
-            // Crear un sector nuevo
-            const res = await fetch('/api/sectors/link', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ codigoVinculacion: codigo, nombreSector: nombre })
+            const { error } = await insforge
+                .from('sectors')
+                .upsert(
+                    { sector_id: codigo, company_id: companyId, name: nombre },
+                    { onConflict: 'sector_id' }
+                );
+
+            // HTTP 204 = upsert exitoso pero sin cuerpo; el cliente lanza error de JSON vacío
+            const esRespuestaVacia = error?.message?.includes('JSON') || error?.message?.includes('end of');
+            if (error && !esRespuestaVacia) throw new Error('No se pudo vincular el dispositivo');
+
+            setLoading(false);
+            MySwal.fire({
+                title: '¡Core Vinculado!',
+                text: `El dispositivo ha sido asignado al sector: "${nombre}".`,
+                icon: 'success',
+                confirmButtonColor: '#003f87'
+            }).then(() => {
+                navigate('/telemetry');
             });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'PIN incorrecto o Core no encontrado');
-            
-            // Simulación de conexión exitosa
-            setTimeout(() => {
-                setLoading(false);
-                MySwal.fire({
-                    title: '¡Core Vinculado!',
-                    text: `El dispositivo ha sido asignado al sector: "${nombre}".`,
-                    icon: 'success',
-                    confirmButtonColor: '#003f87'
-                }).then(() => {
-                    navigate('/telemetry');
-                });
-            }, 1500);
 
         } catch (error) {
             setLoading(false);
@@ -53,7 +52,7 @@ export default function LinkDevice() {
                 icon: 'error',
                 confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#ba1a1a',
-            })
+            });
         }
     };
 

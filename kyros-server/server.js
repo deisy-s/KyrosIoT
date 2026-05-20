@@ -38,6 +38,8 @@ app.use(cookieParser());
 
 connectDB();
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/sectors', sectorRoutes);
 app.use('/api/modules', moduleRoutes);

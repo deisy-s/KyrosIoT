@@ -2,7 +2,7 @@ name: Deploy to Vercel Production
 
 on:
   push:
-    branches: [monitor]
+    branches: [monitorVercel]
 
 env:
   VERCEL_ORG_ID: team_CAJvIQaSVQ7G5SczDUhmsBxU

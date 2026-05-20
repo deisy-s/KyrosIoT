@@ -37,7 +37,7 @@ const App = () => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     const handleLogout = async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
+        await fetch((import.meta.env.VITE_API_URL || '') + '/api/auth/logout', { method: 'POST' });
         localStorage.removeItem('user');
         window.location.href = '/signin';
     };
@@ -47,7 +47,7 @@ const App = () => {
             const token = localStorage.getItem('token');
 
             const respuesta = await axios.post(
-                '/api/notifs/notifs-info',
+                (import.meta.env.VITE_API_URL || '') + '/api/notifs/notifs-info',
                 {},
                 {
                     headers: {
@@ -80,7 +80,7 @@ const App = () => {
     useEffect(() => {
         loadNotifs();
 
-        const socket = io('http://localhost:5000');
+        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
         socket.on('sector-estado-cambio', (data) => {
             console.log(`Cambio en sector ${data.sectorId}`);
@@ -101,7 +101,7 @@ const App = () => {
 
     useEffect(() => {
         loadNotifs();
-        const socket = io('http://localhost:5000');
+        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
         socket.on('sector-estado-cambio', (data) => {
             // data = { sectorId, status } ('Activo' o 'Desconectado')

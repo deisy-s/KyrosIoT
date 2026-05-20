@@ -11,7 +11,8 @@ const moduleSchema = new mongoose.Schema({
     Icon: String,
     DetailType: String,
     DetailValue: String,
-    MAC: String
+    MAC: String,
+    LastHeartbeat: { type: Date, default: Date.now }
 })
 
 const moduleModel = mongoose.model('modules', moduleSchema);

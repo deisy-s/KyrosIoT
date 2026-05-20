@@ -15,7 +15,7 @@ const ModuleCards = ({ modules, loading, handleModuleClick }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {modules.map((module) => {
-                const isAlert = module.Status === 'alert' || module.Status === 'maintenance';
+                const isAlert = module.Status === 'alert' || module.Status === 'maintenance' || module.Status === 'inactive';
                 const bgColor = isAlert ? 'bg-maintenance/10' : 'bg-brand-blue/10';
                 const iconColor = isAlert ? 'text-maintenance/20' : 'text-brand-blue/30';
                 const badgeBg = isAlert ? 'bg-maintenance' : 'bg-brand-blue';
@@ -98,7 +98,7 @@ const Modules = () => {
     if (loading) return <div className="min-h-screen bg-surface text-white p-10">Cargando módulos...</div>;
 
     const totalAlerts = modules.filter(module =>
-        module.Status === 'alert' || module.Status === 'maintenance'
+        module.Status === 'alert' || module.Status === 'maintenance' || module.Status === 'inactive'
     ).length;
 
     return (

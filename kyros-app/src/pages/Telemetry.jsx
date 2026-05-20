@@ -3,6 +3,7 @@ import { BrowserRouter, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
+import io from 'socket.io-client';
 import '../App.css'
 
 const SectorCards = ({ sectors, loading, handleEditClick, btnDelClick, handleDivClick }) => {
@@ -103,10 +104,23 @@ const Telemetry = () => {
     useEffect(() => {
         const buscarNuevosSensores = async () => {
             try {
-                const res = await fetch('/api/iot/sensores/pendientes');
+                const token = localStorage.getItem('token');
+
+                const res = await fetch('/api/iot/sensores/pendientes?_t=${Date.now()}', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
                 const pendientes = await res.json();
-                if (pendientes.length > 0) setNodoDescubierto(pendientes[0]);
-                else setNodoDescubierto(null);
+                if (pendientes.length > 0) {
+                    setNodoDescubierto(pendientes[0]);
+                } else {
+                    setNodoDescubierto(null);
+                }
             } catch (error) {
                 console.error("Error buscando nodos pendientes", error);
             }
@@ -118,16 +132,40 @@ const Telemetry = () => {
     }, []);
 
     const aceptarVinculacion = async () => {
+        if (!nodoDescubierto) return;
+
         setVinculando(true);
         try {
-            await fetch('/api/iot/sensores/registrar', {
+            const token = localStorage.getItem('token');
+            const targetSectorId = nodoDescubierto.detectadoPor;
+            const res = await fetch('/api/iot/sensores/registrar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mac: nodoDescubierto.mac, sector: 'Planta Principal' })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    mac: nodoDescubierto.mac,
+                    sector: targetSectorId,
+                    tipo: nodoDescubierto.tipo,
+                    nombre: nodoDescubierto.nombre
+                })
             });
+
+            if (!res.ok) throw new Error("Error en registro");
+
             setVinculando(false);
             setNodoDescubierto(null);
-            MySwal.fire('¡Vinculado!', 'Módulo registrado en KYROS', 'success');
+            MySwal.fire({
+                title: 'Módulo Sensor Registrado',
+                text: `Se ha registrado el nuevo módulo sensor al sector "${nodoDescubierto.detectadoPor}" exitosamente.`,
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#003f87',
+            }).then(() => {
+                window.location.reload();
+            });
+
         } catch (error) {
             console.error("Error al registrar", error);
             setVinculando(false);
@@ -138,9 +176,13 @@ const Telemetry = () => {
     const totalSensors = sectors.reduce((sum, sector) => sum + (Number(sector.Devices) || 0), 0);
 
     // Num de alertas (alert o maintenance)
-    const totalAlerts = sectors.filter(sector =>
-        sector.Status === 'alert' || sector.Status === 'maintenance'
-    ).length;
+    const totalAlerts = sectors.reduce((acc, sector) => {
+        const sectorCritico = sector.Status === 'alert' || sector.Status === 'maintenance' || sector.Status === 'inactive';
+
+        const modulosCaidos = sector.modules?.filter(mod => mod.Status === 'inactive').length || 0;
+
+        return acc + (sectorCritico ? 1 : 0) + modulosCaidos;
+    }, 0);
 
     // Redireccionar a la vista de módulos del sector específico
     const handleDivClick = (sectorId) => {
@@ -240,6 +282,42 @@ const Telemetry = () => {
         });
     };
 
+    useEffect(() => {
+        const socket = io('http://localhost:5000');
+
+        // Escucha fallas en los módulos satélites
+        socket.on('modulo-estado-cambio', (data) => {
+            setSectors(prevSectors =>
+                prevSectors.map(sector => {
+                    if (sector.SectorID === data.sectorId) {
+                        return {
+                            ...sector,
+                            modules: (sector.modules || []).map(mod =>
+                                mod.MAC === data.mac ? { ...mod, IsActive: data.isActive } : mod
+                            )
+                        };
+                    }
+                    return sector;
+                })
+            );
+        });
+
+        // Escucha caídas de cores centrales
+        socket.on('sector-estado-cambio', (data) => {
+            setSectors(prevSectors =>
+                prevSectors.map(sector =>
+                    sector.SectorID === data.sectorId
+                        ? { ...sector, Status: data.status }
+                        : sector
+                )
+            );
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
     return (
         <div className="bg-surface min-h-screen">
             <main className="pt-25 px-6 md:px-12 pb-12 w-full">
@@ -265,7 +343,7 @@ const Telemetry = () => {
                         <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
                         <div className="flex items-center gap-6">
                             <div className="w-16 h-16 rounded-full bg-brand-blue/20 flex items-center justify-center shrink-0">
-                                <span className="material-symbols-outlined text-brand-blue text-3xl">sensors</span>
+                                <span className="material-symbols-outlined text-brand-blue text-3xl!">sensors</span>
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
@@ -274,6 +352,10 @@ const Telemetry = () => {
                                 </div>
                                 <h2 className="text-xl font-bold text-on-surface">{nodoDescubierto.tipo}</h2>
                                 <p className="text-sm text-on-surface-variant">MAC: <span className="font-mono">{nodoDescubierto.mac}</span></p>
+
+                                <p className="text-xs text-brand-blue font-semibold mt-1">
+                                    Se vinculará a: <span className="underline">{nodoDescubierto?.detectadoPor}</span>
+                                </p>
                             </div>
                         </div>
                         <div className="flex gap-4">
@@ -298,8 +380,12 @@ const Telemetry = () => {
                     <div className="bg-surface-container p-6 border border-brand-blue/10 shadow-sm rounded-xl ambient-glow">
                         <p className="text-on-surface-variant text-[0.6875rem] font-bold tracking-[3%] mb-1 uppercase">Alertas Críticas</p>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-extrabold text-error leading-none">{loading ? "0" : totalAlerts}</span>
-                            <span className="text-on-surface text-sm mb-1">Alertas críticas</span>
+                            <span className={`text-3xl font-headline font-extrabold leading-none ${totalAlerts > 0 ? 'text-error' : 'text-green-500'}`}>
+                                {loading ? "0" : totalAlerts}
+                            </span>
+                            <span className="text-sm text-on-surface mb-1">
+                                {totalAlerts === 1 ? 'Mantenimiento Requerido' : totalAlerts > 1 ? 'Mantenimientos Requeridos' : 'Todo en orden'}
+                            </span>
                         </div>
                     </div>
                 </div>

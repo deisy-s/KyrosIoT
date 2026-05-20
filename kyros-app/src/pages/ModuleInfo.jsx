@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import io from 'socket.io-client';
 import Chart from 'react-apexcharts';
 import '../App.css'
 
@@ -13,15 +14,21 @@ const ModuleInfo = () => {
     const module = location.state?.module; // Obtener la información del módulo desde el estado de navegación
 
     // Configuración visual de la gráfica industrial
-    const [chartOptions] = useState({
+    const [chartOptions, setChartOptions] = useState({
         chart: {
+            id: 'realtime-kyros',
             type: 'area',
             fontFamily: 'Inter, sans-serif',
             toolbar: { show: false },
             zoom: { enabled: false },
+            animations: {
+                enabled: true,
+                easing: 'linear',
+                dynamicAnimation: { speed: 500 }
+            },
             background: 'transparent'
         },
-        colors: ['#0056D2', '#00B4D8'], // Colores KYROS
+        colors: ['#003F87', '#00B4D8'],
         fill: {
             type: 'gradient',
             gradient: {
@@ -34,28 +41,186 @@ const ModuleInfo = () => {
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         xaxis: {
-            categories: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00'],
-            labels: { style: { colors: '#8E918F' } },
+            type: 'datetime',
+            labels: {
+                datetimeUTC: false,
+                format: 'HH:mm:ss',
+                style: { colors: '#8E918F' }
+            },
             axisBorder: { show: false },
-            axisTicks: { show: false }
+            axisTicks: { show: false },
+            range: undefined
         },
-        yaxis: {
-            labels: { style: { colors: '#8E918F' } }
-        },
-        grid: {
+        yaxis: { labels: { style: { colors: '#8E918F' } } },
+        tooltip: {
+            enabled: true,
+            shared: true,
+            x: {
+                format: 'HH:mm:ss'
+            },
+            theme: 'light'
+        }, grid: {
             borderColor: 'rgba(142, 145, 143, 0.1)',
             strokeDashArray: 4,
             yaxis: { lines: { show: true } }
         },
-        theme: { mode: 'light' }, // Cambiar a 'dark' si el dashboard principal es oscuro
         legend: { position: 'top', horizontalAlign: 'right' }
     });
 
-    // Datos simulados (Aquí luego conectaremos tu ESP32)
-    const [chartSeries] = useState([
-        { name: 'Temperatura (°C)', data: [22, 24, 28, 35, 32, 29, 26] },
-        { name: 'Humedad (%)', data: [45, 42, 38, 30, 35, 40, 44] }
-    ]);
+    // Datos simulados
+    // const [chartSeries] = useState([
+    //     { name: 'Temperatura (°C)', data: [22, 24, 28, 35, 32, 29, 26] },
+    //     { name: 'Humedad (%)', data: [45, 42, 38, 30, 35, 40, 44] }
+    // ]);
+
+    const [lecturasRaw, setLecturasRaw] = useState([]);
+
+    const datosTemperatura = lecturasRaw
+        .filter(l => l.tipo === "temperatura")
+        .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }));
+
+    const datosHumedad = lecturasRaw
+        .filter(l => l.tipo === "humedad")
+        .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }));
+
+    // const chartSeries = [
+    //     {
+    //         name: 'Temperatura (°C)',
+    //         data: datosTemperatura
+    //     },
+    //     {
+    //         name: 'Humedad Relativa (%)',
+    //         data: datosHumedad
+    //     }
+    // ];
+
+    // 1. Declaramos la variable que contendrá las series finales de la gráfica
+    let chartSeries = [];
+
+    // 2. Evaluamos de qué tipo es el módulo actual que se está visitando
+    // (Asegúrate de usar la propiedad exacta de tu objeto de módulo, por ejemplo: module?.Type o module?.tipo)
+    const tipoModulo = module?.Type || module?.tipo;
+
+    switch (tipoModulo) {
+        case "Temperatura y Humedad":
+            chartSeries = [
+                {
+                    name: 'Temperatura (°C)',
+                    data: lecturasRaw
+                        .filter(l => l.tipo === "temperatura")
+                        .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
+                },
+                {
+                    name: 'Humedad Relativa (%)',
+                    data: lecturasRaw
+                        .filter(l => l.tipo === "humidity" || l.tipo === "humedad")
+                        .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
+                }
+            ];
+            break;
+
+        case "Humo y Gas":
+            chartSeries = [
+                {
+                    name: 'Presencia de Humo/Gas (ppm)',
+                    data: lecturasRaw
+                        .filter(l => l.tipo === "humo")
+                        .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
+                }
+            ];
+            break;
+
+        case "Movimiento":
+            chartSeries = [
+                {
+                    name: 'Detección de Movimiento (Estado)',
+                    data: lecturasRaw
+                        .filter(l => l.tipo === "movimiento")
+                        .map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
+                }
+            ];
+            break;
+
+        default:
+            chartSeries = [
+                {
+                    name: 'Métrica General',
+                    data: lecturasRaw.map(l => ({ x: new Date(l.fecha).getTime(), y: l.valor }))
+                }
+            ];
+            break;
+    }
+
+    useEffect(() => {
+        const cargarHistorial = async () => {
+            try {
+                const res = await fetch(`/api/iot/telemetria/${module.MAC}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setLecturasRaw(data);
+                }
+            } catch (err) {
+                console.error("Error cargando historial de telemetría", err);
+            }
+        };
+
+        if (module) cargarHistorial();
+    }, [module]);
+
+    useEffect(() => {
+        if (!module.MAC) return;
+
+        // Conectar al WebSocket apuntando a tu puerto del backend
+        const socket = io('http://localhost:5000');
+
+        socket.on(`telemetria-${module.MAC}`, (nuevaLectura) => {
+            setLecturasRaw((prevLecturas) => {
+                const actualizadas = [...prevLecturas, nuevaLectura];
+
+                const limiteTiempo = Date.now() - 10 * 60 * 1000;
+
+                return actualizadas.filter(l => new Date(l.fecha).getTime() >= limiteTiempo);
+            });
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [module.MAC]);
+
+    const SENSOR_CONFIGS = {
+        temperatura: {
+            titulo: "Temperatura Actual",
+            unidad: "°C",
+            iconoTendencia: "thermostat",
+            colorIcono: "text-brand-blue",
+            obtenerMensaje: (valor) => {
+                if (valor > 35) return { texto: "¡ALERTA SOBRECALIENTO!", color: "text-error font-bold animate-pulse" };
+                if (valor < 15) return { texto: "Temperatura baja detectada", color: "text-info" };
+                return { texto: "Temperatura estable en sector", color: "text-green-500" };
+            }
+        },
+        humedad: {
+            titulo: "Humedad Relativa",
+            unidad: "%",
+            iconoTendencia: "humidity_percentage",
+            colorIcono: "text-brand-blue",
+            obtenerMensaje: (valor) => {
+                if (valor > 70) return { texto: "¡HUMEDAD ALTA!", color: "text-error font-bold animate-pulse" };
+                return { texto: "Niveles óptimos de operación", color: "text-green-500" };
+            }
+        },
+        humo: {
+            titulo: "Detección de Humo",
+            unidad: " ppm",
+            iconoTendencia: "detector_smoke",
+            colorIcono: "text-brand-blue",
+            obtenerMensaje: (valor) => {
+                if (valor > 400) return { texto: "¡ALERTA CRÍTICA DE HUMO O GAS!", color: "text-error font-bold animate-pulse" };
+                return { texto: "Atmósfera limpia y segura", color: "text-green-500" };
+            }
+        }
+    };
 
     return (
         <div className="bg-surface min-h-screen pt-25 px-6 md:px-12 pb-12 w-full">
@@ -72,9 +237,9 @@ const ModuleInfo = () => {
                 </div>
 
                 <div className="flex gap-3">
-                    <span className="px-4 py-2 bg-brand-blue/10 text-brand-blue font-bold text-sm rounded-2xl flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-brand-blue animate-pulse"></span>
-                        En línea
+                    <span className={`px-4 py-2 font-bold text-sm rounded-2xl flex items-center gap-2 ${module.Status === "active" ? "bg-brand-blue/10 text-brand-blue" : "bg-error/10 text-error"}`}>
+                        <span className={'w-2 h-2 rounded-full animate-pulse ' + (module.Status === 'active' ? 'bg-brand-blue' : 'bg-red-500')}></span>
+                        {module.Status === 'active' ? 'Activo' : module.Status === 'alert' ? 'Alerta' : module.Status === 'maintenance' ? 'Mantenimiento Requerido' : 'Inactivo'}
                     </span>
                 </div>
             </header>
@@ -90,29 +255,54 @@ const ModuleInfo = () => {
 
                 {/* PANEL LATERAL DE MÉTRICAS ACTUALES */}
                 <div className="flex flex-col gap-6">
-                    <div className="bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm">
-                        <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Temperatura Actual</h3>
-                        <div className="flex items-end gap-2">
-                            <span className="text-5xl font-black text-on-surface">26.0</span>
-                            <span className="text-xl text-brand-blue font-bold mb-1">°C</span>
-                        </div>
-                        <p className="text-xs text-on-surface-variant mt-4 flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs text-error">trending_up</span>
-                            +2.4°C desde la última hora
-                        </p>
-                    </div>
+                    {Object.keys(SENSOR_CONFIGS).map((tipoClave) => {
+                        const lecturasFiltradas = lecturasRaw.filter(l => l.tipo === tipoClave);
 
-                    <div className="bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm">
-                        <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Humedad Relativa</h3>
-                        <div className="flex items-end gap-2">
-                            <span className="text-5xl font-black text-on-surface">44</span>
-                            <span className="text-xl text-brand-blue font-bold mb-1">%</span>
-                        </div>
-                        <p className="text-xs text-on-surface-variant mt-4 flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs text-green-500">trending_down</span>
-                            Niveles óptimos de operación
-                        </p>
-                    </div>
+                        if (lecturasFiltradas.length === 0 && module?.Type !== tipoClave) return null;
+
+                        const ultimoRegistro = lecturasFiltradas[lecturasFiltradas.length - 1];
+                        const valorActual = ultimoRegistro ? ultimoRegistro.valor : (Number(module?.DetailValue) || 0);
+
+                        const config = SENSOR_CONFIGS[tipoClave];
+                        const alerta = config.obtenerMensaje(valorActual);
+
+                        return (
+                            <div
+                                key={tipoClave}
+                                className="bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+                            >
+                                <div>
+                                    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 flex items-center gap-2">
+                                        <span className={`material-symbols-outlined text-2xl! ${config.colorIcono}`}>
+                                            {config.iconoTendencia}
+                                        </span>
+                                        {config.titulo}
+                                    </h3>
+
+                                    <div className="flex items-end gap-2 mt-2">
+                                        <span className="text-5xl font-black text-on-surface tracking-tight">
+                                            {valorActual.toFixed(1)}
+                                        </span>
+                                        <span className="text-xl text-on-surface-variant font-bold mb-1">
+                                            {config.unidad}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p className="text-sm text-on-surface-variant mt-4 flex items-center gap-1.5 border-t border-brand-blue/5 pt-3">
+                                    <span className={`material-symbols-outlined text-xl! ${alerta.color}`}>
+                                        {(tipoClave === 'temperatura' && valorActual > 35) ||
+                                            (tipoClave === 'humo' && valorActual > 400) ||
+                                            (tipoClave === 'humedad' && valorActual > 70)
+                                            ? 'warning' : 'check_circle'}
+                                    </span>
+                                    <span className={alerta.color}>
+                                        {alerta.texto}
+                                    </span>
+                                </p>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

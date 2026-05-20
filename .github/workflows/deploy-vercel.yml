@@ -4,6 +4,10 @@ on:
   push:
     branches: [monitor]
 
+env:
+  VERCEL_ORG_ID: team_CAJvIQaSVQ7G5SczDUhmsBxU
+  VERCEL_PROJECT_ID: prj_zSQlwW0PJqfFq7VZNf3OnI6fZLOK
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,9 +20,14 @@ jobs:
 
       - run: npm install --global vercel
 
-      - name: Deploy to production
-        run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Pull Vercel project info
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: kyros-app
-        env:
-          VERCEL_ORG_ID: team_CAJvIQaSVQ7G5SczDUhmsBxU
-          VERCEL_PROJECT_ID: prj_zSQlwW0PJqfFq7VZNf3OnI6fZLOK
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: kyros-app
+
+      - name: Deploy to production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: kyros-app

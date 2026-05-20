@@ -6,7 +6,8 @@ const notifsSchema = new mongoose.Schema({
     CompanyID: String,
     Message: String,
     Timestamp: { type: Date, default: Date.now },
-    Solved: Boolean
+    Solved: Boolean,
+    Type: String
 })
 
 const notifsModel = mongoose.model('notifs', notifsSchema);

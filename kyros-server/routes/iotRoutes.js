@@ -8,6 +8,7 @@ const moduleDataModel = require('../models/moduleDataModel.js');
 const notifsMode = require('../models/notifsModel.js');
 const verifyToken = require('../middlewares/auth.js');
 const notifsModel = require('../models/notifsModel.js');
+const automationRuleModel = require('../models/automationRuleModel.js');
 
 const telemetrySchema = new mongoose.Schema({
     mac: String,
@@ -28,7 +29,7 @@ const latidosSensores = {};
 
 router.post('/telemetria', async (req, res) => {
     try {
-        const { mac_origen, tipo, valor } = req.body;
+        const { mac_origen, tipo, valor, temp, hum } = req.body;
         const io = req.app.get('socketio');
 
         const moduloAsociado = await moduleModel.findOne({ MAC: mac_origen });
@@ -122,24 +123,6 @@ router.post('/telemetria', async (req, res) => {
             }
 
             if (hum > 70) {
-                // const hNotif = await notifsModel.findOneAndUpdate(
-                //     { DeviceID: mac_origen, Type: 'critico', CompanyID: moduloAsociado.CompanyID, Solved: false },
-                //     {
-                //         $set: {
-                //             Message: `Alerta: Humedad alta detectada en ${moduloAsociado.Name} del sector ${moduloAsociado?.SectorName}. Última lectura: ${hum}%.`,
-                //             Timestamp: timestampActual,
-                //             DeviceType: 'sensor'
-                //         }
-                //     },
-                //     {
-                //         upsert: true, // crear doc si no existe
-                //         new: true,    
-                //         setDefaultsOnInsert: true
-                //     }
-                // );
-                // if (!hNotif) {
-                //     return res.status(500).json({ error: "Error al crear notificación de humedad alta" });
-                // }
                 const alertaExistente = await notifsModel.findOne({ DeviceID: mac_origen, CompanyID: moduloAsociado.CompanyID, Solved: false });
                 if (!alertaExistente) {
                     await notifsModel.create({
@@ -151,9 +134,9 @@ router.post('/telemetria', async (req, res) => {
                         Solved: false
                     });
                 }
-            } 
+            }
 
-            console.log(`[TELEMETRÍA] ${tipo} = ${valor} (MAC: ${mac_origen})`);
+            console.log(`[TELEMETRÍA] ${tipo}: temp=${temp}°C, hum=${hum}% (MAC: ${mac_origen})`);
         } else {
             const nuevaLectura = new moduleDataModel({
                 MAC: mac_origen,
@@ -220,6 +203,30 @@ router.post('/telemetria', async (req, res) => {
             });
         }
 
+        // Motor de automatización
+        const mediciones = tipo === 'temperatura'
+            ? { temperatura: Number(temp), humedad: Number(hum) }
+            : { [tipo]: Number(valor) };
+
+        for (const [metrica, valorMedido] of Object.entries(mediciones)) {
+            const reglas = await automationRuleModel.find({
+                CompanyID: moduloAsociado.CompanyID, metrica, activa: true
+            });
+            for (const regla of reglas) {
+                const cumple =
+                    (regla.condicion === 'mayor' && valorMedido > regla.valor) ||
+                    (regla.condicion === 'menor' && valorMedido < regla.valor) ||
+                    (regla.condicion === 'igual' && valorMedido === regla.valor);
+                // Si cumple → aplicar acción. Si no cumple → aplicar acción inversa.
+                const nuevoEstado = cumple ? (regla.accion === 'encender') : (regla.accion !== 'encender');
+                if (estadoRelevadores[regla.actuador] !== nuevoEstado) {
+                    estadoRelevadores[regla.actuador] = nuevoEstado;
+                    io.emit('relay-cambio', { rele: regla.actuador, estado: nuevoEstado });
+                    console.log(`[AUTOMATION] Relé ${regla.actuador} → ${nuevoEstado ? 'ON' : 'OFF'} (${metrica}=${valorMedido}, regla: ${regla.condicion} ${regla.valor})`);
+                }
+            }
+        }
+
         res.status(200).send({ mensaje: "Guardado en DB exitosamente" });
     } catch (error) {
         console.error("Error en telemetría:", error);
@@ -255,7 +262,8 @@ router.post('/control', (req, res) => {
     const { rele, estado } = req.body;
     if (rele >= 1 && rele <= 4) {
         estadoRelevadores[rele] = estado;
-        // TODO : Connect to bds
+        const io = req.app.get('socketio');
+        io.emit('relay-cambio', { rele, estado });
         console.log(`[OVERRIDE] Relé ${rele} -> ${estado ? 'ON' : 'OFF'}`);
         res.status(200).send({ mensaje: "Comando registrado" });
     } else {

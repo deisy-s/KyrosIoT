@@ -1,7 +1,70 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Chart from 'react-apexcharts';
+import io from 'socket.io-client';
 import '../App.css';
 import API_BASE from '../lib/api.js';
+
+function LiveSensorChart({ mac, tipo }) {
+    const [lecturas, setLecturas] = useState([]);
+    const [ultimoValor, setUltimoValor] = useState(null);
+
+    useEffect(() => {
+        const fetchHistorico = async () => {
+            try {
+                const res = await axios.get(`/api/iot/telemetria/${mac}`);
+                const filtradas = res.data.filter(l => l.tipo === tipo);
+                setLecturas(filtradas);
+                if (filtradas.length > 0) setUltimoValor(filtradas[filtradas.length - 1].valor);
+            } catch (e) { /* silent */ }
+        };
+        fetchHistorico();
+
+        const socket = io(API_BASE || 'http://localhost:5000');
+        socket.on(`telemetria-${mac}`, (nueva) => {
+            if (nueva.tipo !== tipo) return;
+            setUltimoValor(nueva.valor);
+            setLecturas(prev => {
+                const limite = Date.now() - 10 * 60 * 1000;
+                return [...prev, nueva].filter(l => new Date(l.fecha).getTime() > limite);
+            });
+        });
+
+        return () => socket.disconnect();
+    }, [mac, tipo]);
+
+    const esTemp = tipo === 'temperatura';
+    const color = esTemp ? '#003f87' : '#06B6D4';
+    const unidad = esTemp ? '°C' : '%';
+
+    const series = [{
+        name: esTemp ? 'Temperatura' : 'Humedad',
+        data: lecturas.map(l => ({ x: new Date(l.fecha).getTime(), y: parseFloat(Number(l.valor).toFixed(1)) }))
+    }];
+
+    const options = {
+        chart: { type: 'area', toolbar: { show: false }, sparkline: { enabled: true }, animations: { enabled: true, speed: 400 } },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0, stops: [0, 100] } },
+        colors: [color],
+        tooltip: { x: { format: 'HH:mm:ss' }, y: { formatter: v => `${Number(v).toFixed(1)}${unidad}` } },
+        xaxis: { type: 'datetime' },
+    };
+
+    return (
+        <div className="w-full">
+            <span className="text-4xl! font-black text-on-surface tracking-tighter">
+                {ultimoValor !== null ? `${Number(ultimoValor).toFixed(1)}${unidad}` : '—'}
+            </span>
+            <div className="mt-2 w-full">
+                {lecturas.length > 1
+                    ? <Chart type="area" series={series} options={options} height={70} />
+                    : <p className="text-xs text-on-surface-variant mt-3">Esperando datos del sensor...</p>
+                }
+            </div>
+        </div>
+    );
+}
 
 export default function Dashboard() {
     const [isEditMode, setIsEditMode] = useState(false);
@@ -19,6 +82,10 @@ export default function Dashboard() {
                     }
                 });
                 setUser(response.data.user);
+                const widgets = response.data.user.dashboardWidgets;
+                if (widgets && widgets.length > 0) {
+                    setWidgetsActivos(widgets);
+                }
             } catch (error) {
                 console.error("Error fetching user:", error);
             } finally {
@@ -29,21 +96,36 @@ export default function Dashboard() {
         fetchUser();
     }, []);
 
-    // BANCO DE WIDGETS DISPONIBLES 
+    // BANCO DE WIDGETS DISPONIBLES
     const bibliotecaWidgets = [
         { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
         { id: 'w_graph', size: 'col-span-12 lg:col-span-8', type: 'chart', title: 'Rendimiento de Producción', value: '+12% Eficiencia', subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_core', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'status', title: 'Estado KYROSYS Core v1', value: 'En línea', subtitle: 'IP: 192.168.5.105', icon: 'router', color: 'text-brand-blue bg-brand-blue/10' },
-        { id: 'w_gas', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Concentración de Gas', value: '45 ppm', subtitle: 'Sector Almacén • Seguro', icon: 'detector_smoke', color: 'text-yellow-500 bg-yellow-500/10' }
+        { id: 'w_gas', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Concentración de Gas', value: '45 ppm', subtitle: 'Sector Almacén • Seguro', icon: 'detector_smoke', color: 'text-yellow-500 bg-yellow-500/10' },
+        { id: 'w_live_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'live-sensor', mac: '58:E6:C5:DB:60:6C', tipo: 'temperatura', title: 'Temperatura en Tiempo Real', subtitle: 'Satélite DHT22 • En vivo', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
+        { id: 'w_live_hum', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'live-sensor', mac: '58:E6:C5:DB:60:6C', tipo: 'humedad', title: 'Humedad Relativa en Tiempo Real', subtitle: 'Satélite DHT22 • En vivo', icon: 'humidity_percentage', color: 'text-cyan-500 bg-cyan-500/10' },
     ];
 
     // WIDGETS INSTALADOS EN LA PANTALLA INICIAL
-    const [widgetsActivos, setWidgetsActivos] = useState([
+    const WIDGETS_DEFAULT = [
         { id: 'w_temp', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'metric', title: 'Temperatura Cuarto 2', value: '23.4°C', subtitle: 'Línea de Cableado • Nominal', icon: 'device_thermostat', color: 'text-brand-blue bg-brand-blue/10' },
         { id: 'w_psi', size: 'col-span-12 md:col-span-6 lg:col-span-4', type: 'gauge', title: 'Presión Tanque 4', value: '752 PSI', subtitle: 'Planta Compresores • Estable', icon: 'speed', color: 'text-green-500 bg-green-500/10' },
         { id: 'w_graph', size: 'col-span-12 lg:col-span-8', type: 'chart', title: 'Rendimiento de Producción', value: '+12% Eficiencia', subtitle: 'Gráfica de Tendencia de Planta', icon: 'trending_up', color: 'text-brand-blue bg-brand-blue/10' }
-    ]);
+    ];
+    const [widgetsActivos, setWidgetsActivos] = useState(WIDGETS_DEFAULT);
+
+    const guardarWidgets = async (nuevosWidgets) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put('/api/auth/update-widgets',
+                { widgets: nuevosWidgets },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+        } catch (error) {
+            console.error("Error guardando widgets:", error);
+        }
+    };
 
     // LOGICA DE MOVIMIENTO
     const moverWidget = (index, direccion) => {
@@ -84,7 +166,10 @@ export default function Dashboard() {
                     <div className="flex gap-3">
                         {/* Tal vez cambiar color de boton Finalizar */}
                         <button
-                            onClick={() => setIsEditMode(!isEditMode)}
+                            onClick={() => {
+                                if (isEditMode) guardarWidgets(widgetsActivos);
+                                setIsEditMode(!isEditMode);
+                            }}
                             className={`px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${isEditMode
                                 ? 'technical-gradient text-white'
                                 : 'technical-gradient text-white'
@@ -191,6 +276,9 @@ export default function Dashboard() {
                                         </svg>
                                     </div>
                                 )}
+                                {widget.type === 'live-sensor' && (
+                                    <LiveSensorChart mac={widget.mac} tipo={widget.tipo} />
+                                )}
                             </div>
                         </div>
                     ))}
@@ -222,7 +310,7 @@ export default function Dashboard() {
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-xl! font-bold text-on-surface tracking-tight">Biblioteca de Widgets</h2>
-                                    <span class="w-1 h-1 rounded-full bg-on-surface"></span>
+                                    <span className="w-1 h-1 rounded-full bg-on-surface"></span>
                                     <h2 className="text-xl! font-bold text-on-surface tracking-tight">KYROSYS</h2>
                                 </div>
 

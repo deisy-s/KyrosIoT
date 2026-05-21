@@ -43,8 +43,9 @@ const App = () => {
     };
 
     const loadNotifs = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
         try {
-            const token = localStorage.getItem('token');
 
             const respuesta = await axios.post(
                 (import.meta.env.VITE_API_URL || '') + '/api/notifs/notifs-info',
@@ -76,30 +77,6 @@ const App = () => {
             console.error("Error al sincronizar notificaciones:", error);
         }
     };
-
-    useEffect(() => {
-        if (!isLoggedIn) return;
-
-        loadNotifs();
-
-        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
-
-        socket.on('sector-estado-cambio', (data) => {
-            console.log(`Cambio en sector ${data.sectorId}`);
-            loadNotifs();
-            setTimeout(() => window.location.reload(), 600);
-        });
-
-        socket.on('modulo-estado-cambio', (data) => {
-            console.log(`Cambio en módulo ${data.mac}`);
-            loadNotifs();
-            setTimeout(() => window.location.reload(), 600);
-        });
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
 
     useEffect(() => {
         if (!isLoggedIn) return;
@@ -264,7 +241,7 @@ const App = () => {
                             {isProfileOpen && (
                                 <>
                                     <div
-                                        class="rounded-md border border-on-surface-variant/10 bg-surface-container p-1 shadow-md grid min-w-40 absolute right-0 mt-2">
+                                        className="rounded-md border border-on-surface-variant/10 bg-surface-container p-1 shadow-md grid min-w-40 absolute right-0 mt-2">
                                         {isLoggedIn ? (
                                             <Link
                                                 onClick={handleLogout}

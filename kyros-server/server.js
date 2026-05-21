@@ -14,6 +14,7 @@ const moduleRoutes = require('./routes/moduleRoutes.js');
 const iotRoutes = require('./routes/iotRoutes.js');
 const productsRoutes = require('./routes/productsRoutes.js');
 const notifsRoutes = require('./routes/notifsRoutes.js');
+const automationRoutes = require('./routes/automationRoutes.js');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,6 +47,7 @@ app.use('/api/modules', moduleRoutes);
 app.use('/api/iot', iotRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/notifs', notifsRoutes);
+app.use('/api/automation', automationRoutes);
 
 //app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 server.listen(PORT, () => console.log(`Servidor KYROS y Socket.io corriendo en puerto ${PORT}`));

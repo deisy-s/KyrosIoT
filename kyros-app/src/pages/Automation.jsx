@@ -1,26 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import io from 'socket.io-client';
 import '../App.css';
 import API_BASE from '../lib/api.js';
 
+const METRICA_MAP = { 'Temperatura': 'temperatura', 'Humo / Gases': 'humo', 'Humedad Relativa': 'humedad' };
+const METRICA_REVERSE = { temperatura: 'Temperatura', humo: 'Humo / Gases', humedad: 'Humedad Relativa' };
+const CONDICION_MAP = { 'Mayor a': 'mayor', 'Menor a': 'menor', 'Igual a': 'igual' };
+const CONDICION_REVERSE = { mayor: 'Mayor a', menor: 'Menor a', igual: 'Igual a' };
+const ACTUADOR_MAP = { 'Alimentación Principal': 1, 'Extractores': 2, 'Sirena de Emergencia': 3, 'Luces de Seguridad': 4 };
+const ACTUADOR_REVERSE = { 1: 'Alimentación Principal', 2: 'Extractores', 3: 'Sirena de Emergencia', 4: 'Luces de Seguridad' };
+const UNIDAD = { temperatura: '°C', humedad: '%', humo: 'ppm' };
+const METRICA_ICON = { temperatura: 'device_thermostat', humedad: 'water_drop', humo: 'detector_smoke' };
+
 const Automation = () => {
-    const [activeTab, setActiveTab] = useState('rules'); // 'manual' o 'rules'
-
-    // --- ESTADO: CONTROL MANUAL ---
+    const [activeTab, setActiveTab] = useState('rules');
     const [reles, setReles] = useState({ 1: false, 2: false, 3: false, 4: false });
-
-    const toggleRele = async (id) => {
-        const nuevoEstado = !reles[id];
-        setReles({ ...reles, [id]: nuevoEstado });
-        try {
-            await fetch(API_BASE + '/api/iot/control', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rele: id, estado: nuevoEstado })
-            });
-        } catch (error) {
-            console.error("Error enviando el comando:", error);
-        }
-    };
+    const [reglas, setReglas] = useState([]);
+    const [nuevaRegla, setNuevaRegla] = useState({ metrica: 'Temperatura', condicion: 'Mayor a', valor: '', accion: 'Encender', actuador: 'Extractores' });
 
     const actuadores = [
         { id: 1, sector: "Línea de producción 1", equipo: "Alimentación Principal (Fuerza)", icono: "precision_manufacturing", descripcion: "Corte de energía de emergencia." },
@@ -29,27 +26,75 @@ const Automation = () => {
         { id: 4, sector: "Almacén de componentes", equipo: "Iluminación de Seguridad", icono: "lightbulb", descripcion: "Reflectores de contingencia." }
     ];
 
-    // --- ESTADO: REGLAS AUTOMÁTICAS ---
-    const [reglas, setReglas] = useState([
-        { id: 1, metrica: 'Temperatura', condicion: 'Mayor a', valor: 35, unidad: '°C', accion: 'Encender', actuador: 'Extractores', activa: true },
-        { id: 2, metrica: 'Humo / Gases', condicion: 'Mayor a', valor: 200, unidad: 'ppm', accion: 'Encender', actuador: 'Sirena y Corte', activa: true }
-    ]);
+    const fetchReglas = async () => {
+        try {
+            const { data } = await axios.get('/api/automation/rules');
+            setReglas(data);
+        } catch (error) {
+            console.error("Error cargando reglas:", error);
+        }
+    };
 
-    const [nuevaRegla, setNuevaRegla] = useState({ metrica: 'Temperatura', condicion: 'Mayor a', valor: '', accion: 'Encender', actuador: 'Extractores' });
+    useEffect(() => {
+        // Cargar estado real de relés desde el servidor
+        axios.get('/api/iot/control').then(res => setReles(res.data)).catch(() => {});
 
-    const agregarRegla = (e) => {
+        // Cargar reglas persistidas
+        fetchReglas();
+
+        // Escuchar cambios de relés en tiempo real
+        const socket = io(API_BASE || 'http://localhost:5000');
+        socket.on('relay-cambio', ({ rele, estado }) => {
+            setReles(prev => ({ ...prev, [rele]: estado }));
+        });
+        return () => socket.disconnect();
+    }, []);
+
+    const toggleRele = async (id) => {
+        const nuevoEstado = !reles[id];
+        setReles(prev => ({ ...prev, [id]: nuevoEstado }));
+        try {
+            await axios.post('/api/iot/control', { rele: id, estado: nuevoEstado });
+        } catch (error) {
+            console.error("Error enviando el comando:", error);
+            setReles(prev => ({ ...prev, [id]: !nuevoEstado }));
+        }
+    };
+
+    const agregarRegla = async (e) => {
         e.preventDefault();
         if (!nuevaRegla.valor) return;
-        setReglas([...reglas, { ...nuevaRegla, id: Date.now(), unidad: nuevaRegla.metrica === 'Temperatura' ? '°C' : 'ppm', activa: true }]);
-        setNuevaRegla({ metrica: 'Temperatura', condicion: 'Mayor a', valor: '', accion: 'Encender', actuador: 'Extractores' });
+        try {
+            await axios.post('/api/automation/rules', {
+                metrica: METRICA_MAP[nuevaRegla.metrica],
+                condicion: CONDICION_MAP[nuevaRegla.condicion],
+                valor: Number(nuevaRegla.valor),
+                accion: nuevaRegla.accion.toLowerCase(),
+                actuador: ACTUADOR_MAP[nuevaRegla.actuador]
+            });
+            fetchReglas();
+            setNuevaRegla({ metrica: 'Temperatura', condicion: 'Mayor a', valor: '', accion: 'Encender', actuador: 'Extractores' });
+        } catch (error) {
+            console.error("Error creando regla:", error);
+        }
     };
 
-    const toggleRegla = (id) => {
-        setReglas(reglas.map(r => r.id === id ? { ...r, activa: !r.activa } : r));
+    const toggleRegla = async (id) => {
+        try {
+            const { data } = await axios.put(`/api/automation/rules/${id}/toggle`);
+            setReglas(prev => prev.map(r => r._id === id ? data : r));
+        } catch (error) {
+            console.error("Error toggling regla:", error);
+        }
     };
 
-    const eliminarRegla = (id) => {
-        setReglas(reglas.filter(r => r.id !== id));
+    const eliminarRegla = async (id) => {
+        try {
+            await axios.delete(`/api/automation/rules/${id}`);
+            setReglas(prev => prev.filter(r => r._id !== id));
+        } catch (error) {
+            console.error("Error eliminando regla:", error);
+        }
     };
 
     return (
@@ -79,17 +124,13 @@ const Automation = () => {
                     </div>
                 </header>
 
-                {/* Crear regla */}
                 {activeTab === 'rules' && (
                     <div className="animate-fade-in">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                            {/* Formulario para crear la regla */}
                             <div className="lg:col-span-1 bg-surface-container border border-brand-blue/10 rounded-2xl p-6 shadow-sm h-fit">
                                 <h2 className="text-sm font-bold text-brand-blue uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-xl!">add_circle</span> Crear Nueva Regla
                                 </h2>
-
                                 <form onSubmit={agregarRegla} className="space-y-5">
                                     <div>
                                         <label className="block text-xs font-bold text-on-surface-variant uppercase mb-1">Si la métrica:</label>
@@ -134,7 +175,6 @@ const Automation = () => {
                                 </form>
                             </div>
 
-                            {/* Lista de reglas activas */}
                             <div className="lg:col-span-2 space-y-4">
                                 <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Reglas en Operación</h2>
                                 {reglas.length === 0 ? (
@@ -143,27 +183,26 @@ const Automation = () => {
                                     </div>
                                 ) : (
                                     reglas.map((regla) => (
-                                        <div key={regla.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border transition-all ${regla.activa ? 'bg-surface-container border-brand-blue/10 shadow-sm' : 'bg-surface-container/30 border-on-surface-variant/50 opacity-60'}`}>
+                                        <div key={regla._id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border transition-all ${regla.activa ? 'bg-surface-container border-brand-blue/10 shadow-sm' : 'bg-surface-container/30 border-on-surface-variant/50 opacity-60'}`}>
                                             <div className="flex items-center gap-4 mb-4 md:mb-0">
                                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${regla.activa ? 'bg-brand-blue/10 text-brand-blue' : 'bg-surface text-on-surface-variant'}`}>
-                                                    <span className="material-symbols-outlined">{regla.metrica === 'Temperatura' ? 'device_thermostat' : regla.metrica === 'Humedad Relativa' ? 'water_drop' : 'detector_smoke'}</span>
+                                                    <span className="material-symbols-outlined">{METRICA_ICON[regla.metrica] || 'sensors'}</span>
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold text-on-surface-variant uppercase mb-1">Lógica Condicional</p>
                                                     <p className="text-on-surface text-sm">
-                                                        SI <span className="font-bold text-brand-blue">{regla.metrica}</span> es {regla.condicion.toLowerCase()} a <span className="font-bold text-error">{regla.valor}{regla.unidad}</span>
+                                                        SI <span className="font-bold text-brand-blue">{METRICA_REVERSE[regla.metrica]}</span> es {CONDICION_REVERSE[regla.condicion]?.toLowerCase()} a <span className="font-bold text-error">{regla.valor}{UNIDAD[regla.metrica]}</span>
                                                     </p>
                                                     <p className="text-on-surface text-sm">
-                                                        ➔ ENTONCES <span className="font-bold">{regla.accion}</span> {regla.actuador}
+                                                        ➔ ENTONCES <span className="font-bold capitalize">{regla.accion}</span> {ACTUADOR_REVERSE[regla.actuador]}
                                                     </p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-end gap-4">
-                                                <button onClick={() => toggleRegla(regla.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${regla.activa ? 'bg-brand-blue' : 'bg-on-surface-variant'}`}>
+                                                <button onClick={() => toggleRegla(regla._id)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${regla.activa ? 'bg-brand-blue' : 'bg-on-surface-variant'}`}>
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${regla.activa ? 'translate-x-6' : 'translate-x-1'}`} />
                                                 </button>
-                                                <button onClick={() => eliminarRegla(regla.id)}
-                                                    className="p-2 text-xl! text-outline-variant cursor-pointer hover:text-error hover:bg-error/10 rounded-xl transition-all" title="Desvincular nodo" >
+                                                <button onClick={() => eliminarRegla(regla._id)} className="p-2 text-xl! text-outline-variant cursor-pointer hover:text-error hover:bg-error/10 rounded-xl transition-all">
                                                     <span className="align-middle material-symbols-outlined">delete</span>
                                                 </button>
                                             </div>
@@ -175,7 +214,6 @@ const Automation = () => {
                     </div>
                 )}
 
-                {/* ================= PESTAÑA: CONTROL MANUAL ================= */}
                 {activeTab === 'manual' && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-8 animate-fade-in">
                         {actuadores.map((act) => (
@@ -190,19 +228,17 @@ const Automation = () => {
                                         </span>
                                     </div>
                                 </div>
-
                                 <div className="p-6 flex-1 flex flex-col">
                                     <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{act.sector}</span>
                                     <h3 className="text-on-surface font-bold text-xl leading-tight mb-2">{act.equipo}</h3>
                                     <p className="text-base text-on-surface-variant mb-6">{act.descripcion}</p>
-
                                     <div className="mt-auto">
                                         <button
                                             onClick={() => toggleRele(act.id)}
                                             className={`w-full py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] transition-all active:scale-95 ${reles[act.id]
-                                                    ? 'bg-surface-container text-on-surface border border-outline hover:bg-error/10 hover:text-error hover:border-error'
-                                                    : 'technical-gradient text-white'
-                                                }`}
+                                                ? 'bg-surface-container text-on-surface border border-outline hover:bg-error/10 hover:text-error hover:border-error'
+                                                : 'technical-gradient text-white'
+                                            }`}
                                         >
                                             <span className="material-symbols-outlined text-sm">
                                                 {reles[act.id] ? 'power_settings_new' : 'play_arrow'}

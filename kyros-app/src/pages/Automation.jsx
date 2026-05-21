@@ -26,10 +26,12 @@ const Automation = () => {
         { id: 4, sector: "Almacén de componentes", equipo: "Iluminación de Seguridad", icono: "lightbulb", descripcion: "Reflectores de contingencia." }
     ];
 
+    const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+
     const fetchReglas = async () => {
         try {
-            const { data } = await axios.get('/api/automation/rules');
-            setReglas(data);
+            const { data } = await axios.get('/api/automation/rules', authHeader());
+            setReglas(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Error cargando reglas:", error);
         }
@@ -71,7 +73,7 @@ const Automation = () => {
                 valor: Number(nuevaRegla.valor),
                 accion: nuevaRegla.accion.toLowerCase(),
                 actuador: ACTUADOR_MAP[nuevaRegla.actuador]
-            });
+            }, authHeader());
             fetchReglas();
             setNuevaRegla({ metrica: 'Temperatura', condicion: 'Mayor a', valor: '', accion: 'Encender', actuador: 'Extractores' });
         } catch (error) {
@@ -81,7 +83,7 @@ const Automation = () => {
 
     const toggleRegla = async (id) => {
         try {
-            const { data } = await axios.put(`/api/automation/rules/${id}/toggle`);
+            const { data } = await axios.put(`/api/automation/rules/${id}/toggle`, {}, authHeader());
             setReglas(prev => prev.map(r => r._id === id ? data : r));
         } catch (error) {
             console.error("Error toggling regla:", error);
@@ -90,7 +92,7 @@ const Automation = () => {
 
     const eliminarRegla = async (id) => {
         try {
-            await axios.delete(`/api/automation/rules/${id}`);
+            await axios.delete(`/api/automation/rules/${id}`, authHeader());
             setReglas(prev => prev.filter(r => r._id !== id));
         } catch (error) {
             console.error("Error eliminando regla:", error);
